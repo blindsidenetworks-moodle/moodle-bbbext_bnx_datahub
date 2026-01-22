@@ -42,3 +42,67 @@ $string['privacy:metadata:engemojis'] = 'The number of emojis used by the user.'
 $string['privacy:metadata:engpollvotes'] = 'The number of poll votes submitted by the user.';
 $string['privacy:metadata:engtalktime'] = 'The total talk time of the user in seconds.';
 $string['privacy:metadata:rawdata'] = 'Raw analytics data for the user.';
+
+// Capabilities.
+$string['bnx_datahub:viewreports'] = 'View BigBlueButton BNX reports';
+
+// Report entities.
+$string['attendee'] = 'BigBlueButton Attendee';
+$string['entity:attendee'] = 'Attendee';
+$string['entity:meeting'] = 'Meeting';
+$string['entity:room'] = 'Room';
+
+// Attendee entity columns and filters.
+$string['attendees'] = 'Attendees';
+$string['attendee:fullname'] = 'Attendee full name';
+$string['attendee:role'] = 'Role';
+$string['attendee:role:moderator'] = 'Moderator';
+$string['attendee:role:viewer'] = 'Viewer';
+$string['attendee:timejoin'] = 'Time joined';
+$string['attendee:timeleave'] = 'Time left';
+$string['attendee:elapsedtime'] = 'Elapsed time';
+$string['attendee:score'] = 'Score';
+$string['attendee:engchats'] = 'Chats';
+$string['attendee:engtalks'] = 'Talks';
+$string['attendee:engraisehand'] = 'Raised hand';
+$string['attendee:engemojis'] = 'Emojis';
+$string['attendee:engpollvotes'] = 'Poll votes';
+$string['attendee:engtalktime'] = 'Talk time';
+
+// Meeting entity columns and filters.
+$string['meeting'] = 'BigBlueButton Meeting';
+$string['meetings'] = 'Meetings';
+$string['meeting:id'] = 'Meeting ID';
+$string['meeting:internalmeetingid'] = 'Internal meeting ID';
+$string['meeting:name'] = 'Meeting name';
+$string['meeting:timestart'] = 'Start time';
+$string['meeting:timeend'] = 'End time';
+$string['meetingid'] = 'Meeting ID';
+$string['internalmeetingid'] = 'Internal meeting ID';
+$string['meetingname'] = 'Meeting name';
+$string['meetingtimestart'] = 'Meeting time start';
+$string['meetingtimeend'] = 'Meeting time end';
+
+// Room entity columns and filters.
+$string['room'] = 'BigBlueButton Room';
+$string['rooms'] = 'Rooms';
+$string['room:id'] = 'Room ID';
+$string['room:name'] = 'Room name';
+$string['room:timecreated'] = 'Time created';
+$string['room:timemodified'] = 'Time modified';
+$string['roomid'] = 'Room ID';
+$string['roomname'] = 'Room name';
+$string['roomtimecreated'] = 'Room time created';
+$string['roomtimemodified'] = 'Room time modified';
+
+// Report names.
+$string['attendancereport'] = 'Attendance report';
+$string['engagementreport'] = 'Engagement report';
+$string['engagement'] = 'Engagement';
+$string['reportattendance'] = 'Attendance report';
+$string['reportengagement'] = 'Engagement report';
+
+// Navigation links.
+$string['attendance'] = 'Attendance';
+$string['view_report_attendance'] = 'Attendance';
+$string['view_report_engagement'] = 'Engagement';
