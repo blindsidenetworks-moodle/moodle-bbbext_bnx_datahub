@@ -32,10 +32,8 @@ jobs:
       matrix:
         php: ['8.3']
         runchecks: ['all']
-        # moodle-branch: ['MOODLE_501_STABLE', 'main']
-        moodle-branch: ['MOODLE_501_STABLE']
-        # database: ['mariadb', 'pgsql']
-        database: ['mariadb']
+        moodle-branch: ['MOODLE_501_STABLE', 'main']
+        database: ['mariadb', 'pgsql']
 
     steps:
       - name: Check out repository code
@@ -74,6 +72,12 @@ jobs:
           git clone https://${{ secrets.BNX_REPO_TOKEN }}@github.com/blindsidenetworks-ps/moodle-bbbext_bnx.git bnx
         env:
           BNX_REPO_TOKEN: ${{ secrets.BNX_REPO_TOKEN }}
+
+      - name: Reinitialize PHPUnit after adding dependency
+        run: php moodle/public/admin/tool/phpunit/cli/init.php
+
+      - name: Reinitialize Behat after adding dependency
+        run: php moodle/public/admin/tool/behat/cli/init.php
 
       - name: PHP Lint
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}

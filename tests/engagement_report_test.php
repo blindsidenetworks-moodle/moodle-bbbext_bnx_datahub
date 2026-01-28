@@ -1,0 +1,210 @@
+<?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+namespace bbbext_bnx_datahub\reportbuilder\local\systemreports;
+
+use advanced_testcase;
+use context_module;
+use context_system;
+
+/**
+ * Tests for the engagement system report.
+ *
+ * @package   bbbext_bnx_datahub
+ * @copyright 2025 onwards, Blindside Networks Inc
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers    \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement
+ */
+final class engagement_report_test extends advanced_testcase {
+    /**
+     * Set up for each test.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->resetAfterTest();
+    }
+
+    /**
+     * Test that engagement report can be instantiated.
+     */
+    public function test_report_instantiation(): void {
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance()
+        );
+
+        $this->assertInstanceOf(engagement::class, $report);
+    }
+
+    /**
+     * Test that engagement report has expected columns.
+     */
+    public function test_report_columns(): void {
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance()
+        );
+
+        $columns = $report->get_active_columns();
+
+        $this->assertNotEmpty($columns);
+
+        // Check for expected columns from the report.
+        $columnidentifiers = array_map(function ($col) {
+            return $col->get_unique_identifier();
+        }, $columns);
+
+        $this->assertContains('course:coursefullnamewithlink', $columnidentifiers);
+        $this->assertContains('room:id', $columnidentifiers);
+        $this->assertContains('room:name', $columnidentifiers);
+        $this->assertContains('meeting:id', $columnidentifiers);
+        $this->assertContains('meeting:name', $columnidentifiers);
+        $this->assertContains('user:fullnamewithpicturelink', $columnidentifiers);
+
+        // Engagement specific columns.
+        $this->assertContains('attendee:engchats', $columnidentifiers);
+        $this->assertContains('attendee:engtalks', $columnidentifiers);
+        $this->assertContains('attendee:engemojis', $columnidentifiers);
+        $this->assertContains('attendee:engpollvotes', $columnidentifiers);
+        $this->assertContains('attendee:engtalktime', $columnidentifiers);
+    }
+
+    /**
+     * Test that engagement report has expected filters.
+     */
+    public function test_report_filters(): void {
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance()
+        );
+
+        $filters = $report->get_active_filters();
+
+        $this->assertNotEmpty($filters);
+
+        $filteridentifiers = array_map(function ($filter) {
+            return $filter->get_unique_identifier();
+        }, $filters);
+
+        $this->assertContains('course:fullname', $filteridentifiers);
+        $this->assertContains('room:id', $filteridentifiers);
+        $this->assertContains('room:name', $filteridentifiers);
+        $this->assertContains('meeting:id', $filteridentifiers);
+        $this->assertContains('meeting:name', $filteridentifiers);
+        $this->assertContains('meeting:timestart', $filteridentifiers);
+        $this->assertContains('attendee:fullname', $filteridentifiers);
+    }
+
+    /**
+     * Test that engagement report is downloadable.
+     */
+    public function test_report_downloadable(): void {
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance()
+        );
+
+        $this->assertTrue($report->is_downloadable());
+    }
+
+    /**
+     * Test engagement report with no data returns empty result.
+     */
+    public function test_report_empty_data(): void {
+        global $PAGE;
+
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance()
+        );
+
+        // Set page URL to avoid debugging notice when rendering.
+        $PAGE->set_url(new \moodle_url('/'));
+
+        // With no data, the report should still work.
+        $content = $report->output();
+        $this->assertIsString($content);
+    }
+
+    /**
+     * Test that can_view returns true.
+     */
+    public function test_can_view(): void {
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance()
+        );
+
+        // Use reflection to test protected can_view method.
+        $reflection = new \ReflectionClass($report);
+        $method = $reflection->getMethod('can_view');
+        $method->setAccessible(true);
+
+        $this->assertTrue($method->invoke($report));
+    }
+
+    /**
+     * Test engagement report with module context parameter.
+     */
+    public function test_report_with_bigbluebuttonbnid_parameter(): void {
+        $generator = $this->getDataGenerator();
+
+        // Create a course and BigBlueButton activity.
+        $course = $generator->create_course();
+        $bbb = $generator->create_module('bigbluebuttonbn', ['course' => $course->id, 'name' => 'Test BBB']);
+
+        // Create report with bigbluebuttonbnid parameter.
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance(),
+            '',
+            '',
+            0,
+            ['bigbluebuttonbnid' => $bbb->id]
+        );
+
+        $this->assertInstanceOf(engagement::class, $report);
+    }
+
+    /**
+     * Test that engagement report columns include engagement metrics.
+     */
+    public function test_engagement_metrics_columns(): void {
+        $report = \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            context_system::instance()
+        );
+
+        $columns = $report->get_active_columns();
+        $columnidentifiers = array_map(function ($col) {
+            return $col->get_unique_identifier();
+        }, $columns);
+
+        // Verify engagement metrics are in the report.
+        $engagementmetrics = [
+            'attendee:engchats',
+            'attendee:engtalks',
+            'attendee:engraisehand',
+            'attendee:engemojis',
+            'attendee:engpollvotes',
+            'attendee:engtalktime',
+        ];
+
+        foreach ($engagementmetrics as $metric) {
+            $this->assertContains($metric, $columnidentifiers, "Missing engagement metric: {$metric}");
+        }
+    }
+}
