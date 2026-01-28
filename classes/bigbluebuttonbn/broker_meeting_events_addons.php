@@ -30,7 +30,6 @@ use bbbext_bnx_datahub\logger;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class broker_meeting_events_addons extends \mod_bigbluebuttonbn\local\extension\broker_meeting_events_addons {
-
     /**
      * Data processing action
      */

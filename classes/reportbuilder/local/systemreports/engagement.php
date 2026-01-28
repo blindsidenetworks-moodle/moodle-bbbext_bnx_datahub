@@ -35,7 +35,6 @@ use bbbext_bnx_datahub\reportbuilder\local\entities\room;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class engagement extends system_report {
-
     /**
      * Initialise the report.
      */
@@ -77,7 +76,9 @@ class engagement extends system_report {
         $meetingentity = new meeting();
         $meetingalias = $meetingentity->get_table_alias('bbbext_bnx_datahub_meeting');
         $this->add_entity($meetingentity);
-        $this->add_join("LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid");
+        $this->add_join(
+            "LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid"
+        );
 
         // Join bbbext_bnx to get bigbluebuttonbnid.
         $this->add_join("LEFT JOIN {bbbext_bnx} bnx ON bnx.id = {$meetingalias}.bnxid");

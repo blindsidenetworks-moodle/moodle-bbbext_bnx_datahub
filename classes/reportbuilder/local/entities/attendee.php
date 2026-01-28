@@ -34,7 +34,6 @@ use core_reportbuilder\local\report\{column, filter};
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class attendee extends base {
-
     /**
      * Database tables that this entity uses
      *
@@ -94,7 +93,7 @@ class attendee extends base {
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_LONGTEXT)
             ->add_field("{$attendeealias}.fullname", 'fullname')
-            ->add_callback(static function(?string $fullname, stdClass $attendee): string {
+            ->add_callback(static function (?string $fullname, stdClass $attendee): string {
                 if ($fullname === null) {
                     return '';
                 }
@@ -111,7 +110,7 @@ class attendee extends base {
             ->set_type(column::TYPE_LONGTEXT)
             ->add_field("{$attendeealias}.role", 'role')
             ->set_is_sortable(true)
-            ->add_callback(static function(?string $role, stdClass $attendee): string {
+            ->add_callback(static function (?string $role, stdClass $attendee): string {
                 if ($role === null) {
                     return '';
                 }
@@ -152,7 +151,7 @@ class attendee extends base {
             ->set_type(column::TYPE_TEXT)
             ->add_fields("{$attendeealias}.elapsedtime")
             ->set_is_sortable(true)
-            ->add_callback(function($value) {
+            ->add_callback(function ($value) {
                 return gmdate('H:i:s', intval($value));
             });
 
@@ -250,7 +249,7 @@ class attendee extends base {
             $DB->sql_cast_to_char("{$attendeealias}.role")
         ))
             ->add_joins($this->get_joins())
-            ->set_options_callback(function() {
+            ->set_options_callback(function () {
                 return [
                     'viewer' => get_string('attendee:role:viewer', 'bbbext_bnx_datahub'),
                     'moderator' => get_string('attendee:role:moderator', 'bbbext_bnx_datahub'),

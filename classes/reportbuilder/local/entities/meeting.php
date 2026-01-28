@@ -34,7 +34,6 @@ use core_reportbuilder\local\report\{column, filter};
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class meeting extends base {
-
     /**
      * Database tables that this entity uses
      *
@@ -105,7 +104,7 @@ class meeting extends base {
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_LONGTEXT)
             ->add_field("{$meetingalias}.internalmeetingid", 'internalmeetingid')
-            ->add_callback(static function(?string $id, stdClass $meeting): string {
+            ->add_callback(static function (?string $id, stdClass $meeting): string {
                 if ($id === null) {
                     return '';
                 }
@@ -121,7 +120,7 @@ class meeting extends base {
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_LONGTEXT)
             ->add_field("{$meetingalias}.meetingname", 'meetingname')
-            ->add_callback(static function(?string $name, stdClass $meeting): string {
+            ->add_callback(static function (?string $name, stdClass $meeting): string {
                 if ($name === null) {
                     return '';
                 }
