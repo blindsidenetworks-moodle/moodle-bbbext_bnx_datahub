@@ -39,7 +39,6 @@ use Behat\Gherkin\Node\TableNode;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class behat_bbbext_bnx_datahub extends behat_base {
-
     /**
      * Create meeting data for a BigBlueButton activity.
      *
