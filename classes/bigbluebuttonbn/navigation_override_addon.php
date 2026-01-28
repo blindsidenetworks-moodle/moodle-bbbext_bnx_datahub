@@ -68,7 +68,9 @@ class navigation_override_addon implements navigation_override_addon_interface {
                 if (has_capability('bbbext/bnx_datahub:viewreports', $context)) {
                     // Attendance report link.
                     $attendancereporturl = new moodle_url(
-                        '/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php', ['cmid' => $cm->id]);
+                        '/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php',
+                        ['cmid' => $cm->id]
+                    );
                     $nodenav->add(
                         get_string('reportattendance', 'bbbext_bnx_datahub'),
                         $attendancereporturl,
@@ -76,7 +78,9 @@ class navigation_override_addon implements navigation_override_addon_interface {
                     );
                     // Engagement report link.
                     $engagementreporturl = new moodle_url(
-                        '/mod/bigbluebuttonbn/extension/bnx_datahub/engagement.php', ['cmid' => $cm->id]);
+                        '/mod/bigbluebuttonbn/extension/bnx_datahub/engagement.php',
+                        ['cmid' => $cm->id]
+                    );
                     $nodenav->add(
                         get_string('reportengagement', 'bbbext_bnx_datahub'),
                         $engagementreporturl,
