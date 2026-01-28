@@ -69,10 +69,16 @@ final class broker_meeting_events_addons_test extends advanced_testcase {
             'name' => 'Events Test Meeting',
         ]);
 
-        // Create BNX record.
-        $bnx = new stdClass();
-        $bnx->bigbluebuttonbnid = $bbb->id;
-        $bnx->id = $DB->insert_record('bbbext_bnx', $bnx);
+        // Check if BNX record already exists (created by mod_instance_helper hook).
+        $bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $bbb->id]);
+        if (!$bnx) {
+            // Create BNX record only if it doesn't exist.
+            $bnx = new stdClass();
+            $bnx->bigbluebuttonbnid = $bbb->id;
+            $bnx->timecreated = time();
+            $bnx->timemodified = time();
+            $bnx->id = $DB->insert_record('bbbext_bnx', $bnx);
+        }
 
         $instance = instance::get_from_instanceid($bbb->id);
 
@@ -229,8 +235,11 @@ final class broker_meeting_events_addons_test extends advanced_testcase {
 
         $addon = new broker_meeting_events_addons($instance, $jsondata);
 
-        // Should not throw exception.
+        // Should not throw exception, but will trigger debugging.
         $addon->process_action();
+
+        // Expect the debugging message about missing data.
+        $this->assertDebuggingCalled('Warning: Missing data object in JSON.', DEBUG_DEVELOPER);
 
         // Verify no meeting was logged.
         $bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $bbb->id]);
@@ -252,6 +261,9 @@ final class broker_meeting_events_addons_test extends advanced_testcase {
 
         $addon = new broker_meeting_events_addons($instance, $jsondata);
         $addon->process_action();
+
+        // Expect the debugging message about no attendees.
+        $this->assertDebuggingCalled();
 
         // Meeting should still be logged even with no attendees.
         $bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $bbb->id]);

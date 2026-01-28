@@ -123,10 +123,15 @@ final class attendance_report_test extends advanced_testcase {
      * Test attendance report with no data returns empty result.
      */
     public function test_report_empty_data(): void {
+        global $PAGE;
+
         $report = \core_reportbuilder\system_report_factory::create(
             attendance::class,
             context_system::instance()
         );
+
+        // Set page URL to avoid debugging notice when rendering.
+        $PAGE->set_url(new \moodle_url('/'));
 
         // With no data, the report should still work.
         $content = $report->output();

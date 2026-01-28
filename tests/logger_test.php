@@ -182,6 +182,12 @@ final class logger_test extends advanced_testcase {
 
         $result = logger::log_meeting($instance, $meetingdata);
 
+        // Expect the debugging message about missing BNX record.
+        $this->assertDebuggingCalled(
+            '[bbbext_bnx_datahub] logger::log_meeting No BNX record found for instance.',
+            DEBUG_DEVELOPER
+        );
+
         $this->assertEquals(0, $result);
     }
 
