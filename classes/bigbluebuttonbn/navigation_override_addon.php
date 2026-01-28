@@ -53,13 +53,15 @@ class navigation_override_addon implements navigation_override_addon_interface {
         if (!$instance->is_type_recordings_only()) {
             $context = context_module::instance($cm->id);
             // Add these options only if the callback for meetingevents is enabled.
-            if ((boolean) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
+            if ((bool) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
                 global $USER;
                 if (has_capability('moodle/course:manageactivities', $context, $USER->id)) {
                     // Validate completion link.
                     $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $cm->instance;
-                    $nodenav->add(get_string('completionvalidatestate', 'bigbluebuttonbn'),
-                        $completionvalidate, navigation_node::TYPE_CONTAINER
+                    $nodenav->add(
+                        get_string('completionvalidatestate', 'bigbluebuttonbn'),
+                        $completionvalidate,
+                        navigation_node::TYPE_CONTAINER
                     );
                     $nodenav->set_force_into_more_menu(true);
                 }
@@ -67,14 +69,18 @@ class navigation_override_addon implements navigation_override_addon_interface {
                     // Attendance report link.
                     $attendancereporturl = new moodle_url(
                         '/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php', ['cmid' => $cm->id]);
-                    $nodenav->add(get_string('reportattendance', 'bbbext_bnx_datahub'),
-                        $attendancereporturl, navigation_node::TYPE_CONTAINER
+                    $nodenav->add(
+                        get_string('reportattendance', 'bbbext_bnx_datahub'),
+                        $attendancereporturl,
+                        navigation_node::TYPE_CONTAINER
                     );
                     // Engagement report link.
                     $engagementreporturl = new moodle_url(
                         '/mod/bigbluebuttonbn/extension/bnx_datahub/engagement.php', ['cmid' => $cm->id]);
-                    $nodenav->add(get_string('reportengagement', 'bbbext_bnx_datahub'),
-                        $engagementreporturl, navigation_node::TYPE_CONTAINER
+                    $nodenav->add(
+                        get_string('reportengagement', 'bbbext_bnx_datahub'),
+                        $engagementreporturl,
+                        navigation_node::TYPE_CONTAINER
                     );
                 }
             }

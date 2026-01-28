@@ -29,7 +29,6 @@ use mod_bigbluebuttonbn\instance;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class logger {
-
     /**
      * Logs a meeting with the given instance and data.
      *

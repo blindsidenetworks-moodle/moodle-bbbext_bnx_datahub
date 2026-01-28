@@ -40,7 +40,13 @@ class system_report_factory {
     public static function create(string $source, array $parameters = [], ?context $context = null): system_report {
         $context = $context ?: context_system::instance();
 
-        return \core_reportbuilder\system_report_factory::create($source, $context, 'bbbext_bnx_datahub', '',
-            0, $parameters);
+        return \core_reportbuilder\system_report_factory::create(
+            $source,
+            $context,
+            'bbbext_bnx_datahub',
+            '',
+            0,
+            $parameters
+        );
     }
 }

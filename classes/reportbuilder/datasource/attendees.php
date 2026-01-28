@@ -34,7 +34,6 @@ use bbbext_bnx_datahub\reportbuilder\local\entities\attendee;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class attendees extends datasource {
-
     /**
      * Return attendee friendly name of the report source
      *

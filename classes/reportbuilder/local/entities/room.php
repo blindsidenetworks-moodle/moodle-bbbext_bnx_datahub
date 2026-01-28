@@ -34,7 +34,6 @@ use core_reportbuilder\local\report\{column, filter};
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class room extends base {
-
     /**
      * Database tables that this entity uses
      *
@@ -105,7 +104,7 @@ class room extends base {
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_LONGTEXT)
             ->add_field("{$roomalias}.name", 'name')
-            ->add_callback(static function(?string $name, stdClass $room): string {
+            ->add_callback(static function (?string $name, stdClass $room): string {
                 if ($name === null) {
                     return '';
                 }
