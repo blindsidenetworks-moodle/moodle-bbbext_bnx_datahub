@@ -75,6 +75,12 @@ jobs:
         env:
           BNX_REPO_TOKEN: ${{ secrets.BNX_REPO_TOKEN }}
 
+      - name: Reinitialize PHPUnit after adding dependency
+        run: php moodle/public/admin/tool/phpunit/cli/init.php
+
+      - name: Reinitialize Behat after adding dependency
+        run: php moodle/public/admin/tool/behat/cli/init.php
+
       - name: PHP Lint
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci phplint
