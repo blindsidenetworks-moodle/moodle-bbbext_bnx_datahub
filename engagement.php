@@ -62,7 +62,7 @@ $report = \bbbext_bnx_datahub\reportbuilder\system_report_factory::create(
 
 // Initialize the nav label override (for BNX branding in secondary nav).
 if ($cmid) {
-    $navlabel = get_string('secondarynavlabel', 'bbbext_bnx');
+    $navlabel = get_string('navlabel', 'bbbext_bnx');
     $PAGE->requires->js_call_amd('bbbext_bnx/overridenav', 'init');
 }
 
