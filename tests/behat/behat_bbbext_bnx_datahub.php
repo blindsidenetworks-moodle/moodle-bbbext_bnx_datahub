@@ -36,25 +36,8 @@ use Behat\Gherkin\Node\TableNode;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class behat_bbbext_bnx_datahub extends behat_base {
-    /**
-     * Enable a BigBlueButton extension plugin.
-     *
-     * @Given /^the bbbext "(?P<pluginname>(?:[^"]|\\")*)" plugin is enabled$/
-     * @param string $pluginname The plugin name (e.g., 'bnx', 'bnx_datahub').
-     */
-    public function the_bbbext_plugin_is_enabled(string $pluginname): void {
-        set_config('disabled', 0, 'bbbext_' . $pluginname);
-    }
-
-    /**
-     * Disable a BigBlueButton extension plugin.
-     *
-     * @Given /^the bbbext "(?P<pluginname>(?:[^"]|\\")*)" plugin is disabled$/
-     * @param string $pluginname The plugin name (e.g., 'bnx', 'bnx_datahub').
-     */
-    public function the_bbbext_plugin_is_disabled(string $pluginname): void {
-        set_config('disabled', 1, 'bbbext_' . $pluginname);
-    }
+    // Note: the_bbbext_plugin_is_enabled and the_bbbext_plugin_is_disabled steps
+    // are defined in behat_bbbext_bnx (parent plugin) to be available for all child plugins.
 
     /**
      * Create meeting data for a BigBlueButton activity.
