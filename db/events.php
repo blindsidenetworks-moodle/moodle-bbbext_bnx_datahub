@@ -27,8 +27,8 @@ defined('MOODLE_INTERNAL') || die();
 
 $observers = [
     [
-        'eventname'   => '\core\event\plugin_enabled',
-        'callback'    => '\bbbext_bnx_datahub\observer::on_plugin_enabled',
+        'eventname' => '\\core\\event\\config_log_created',
+        'callback' => '\\bbbext_bnx_datahub\\observer::config_log_created',
         'includefile' => '/mod/bigbluebuttonbn/extension/bnx_datahub/classes/observer.php',
     ],
 ];
