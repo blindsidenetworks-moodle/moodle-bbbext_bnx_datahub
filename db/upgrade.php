@@ -33,6 +33,8 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
     if ($oldversion < 2026012202) {
         // Ensure BigBlueButton meeting events are enabled when bnx_datahub is upgraded/enabled.
         set_config('bigbluebuttonbn_meetingevents_enabled', 1, 'mod_bigbluebuttonbn');
+
+        upgrade_plugin_savepoint(true, 2026012202, 'bbbext', 'bnx_datahub');
     }
 
     return true;
