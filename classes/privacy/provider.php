@@ -33,11 +33,11 @@ use core_privacy\local\request\writer;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class provider implements
-    // This plugin is capable of determining which users have data within it.
-    \core_privacy\local\request\core_userlist_provider,
-
     // This plugin does store personal user data locally.
     \core_privacy\local\metadata\provider,
+
+    // This plugin is capable of determining which users have data within it.
+    \core_privacy\local\request\core_userlist_provider,
 
     // This plugin implements the original plugin\provider interface.
     \core_privacy\local\request\plugin\provider {
