@@ -20,7 +20,7 @@ namespace bbbext_bnx_datahub;
  * Callbacks invoked by the parent plugin when this sidecar is enabled or disabled.
  *
  * The parent plugin (bbbext_bnx) discovers this class via the convention
- * {@see \<plugin>\plugininfo_callbacks} and calls the appropriate method.
+ * `\<plugin>\plugininfo_callbacks` and calls the appropriate method.
  *
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
