@@ -27,8 +27,6 @@
  * Perform the post-install procedures.
  */
 function xmldb_bbbext_bnx_datahub_install() {
-    global $DB;
-
-    // Enable the bnx_datahub sub plugin on new installs by default.
-    $DB->set_field('modules', 'visible', 1, ['name' => 'bbbext_bnx_datahub']);
+    // Ensure meeting events are enabled on install.
+    set_config('bigbluebuttonbn_meetingevents_enabled', 1);
 }

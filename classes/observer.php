@@ -26,25 +26,36 @@
 namespace bbbext_bnx_datahub;
 
 /**
- * Event observer class.
+ * Event observer callbacks for BN Experience Data Hub extension.
+ *
+ * @package   bbbext_bnx_datahub
+ * @copyright 2026 onwards, Blindside Networks Inc
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class observer {
     /**
-     * Handle the plugin_enabled event.
+     * Ensure meeting events setting is enabled when plugin is enabled.
      *
-     * When bnx_datahub extension is enabled, ensure that the
-     * BigBlueButton meeting events setting is also enabled.
-     *
-     * @param \core\event\plugin_enabled $event The plugin_enabled event.
+     * @param \core\event\config_log_created $event The config_log_created event.
      * @return void
      */
-    public static function on_plugin_enabled(\core\event\plugin_enabled $event) {
-        // Only proceed if the enabled plugin is bnx_datahub.
-        if ($event->other['plugin'] !== 'bbbext_bnx_datahub') {
+    public static function config_log_created(\core\event\config_log_created $event): void {
+        $other = $event->other ?? [];
+
+        if (($other['name'] ?? '') !== 'disabled') {
             return;
         }
 
-        // Enable BigBlueButton meeting events when bnx_datahub is enabled.
-        set_config('bigbluebuttonbn_meetingevents_enabled', 1, 'mod_bigbluebuttonbn');
+        if (($other['plugin'] ?? '') !== 'bbbext_bnx_datahub') {
+            return;
+        }
+
+        $datahubdisabled = (int)($other['value'] ?? 0) === 1;
+        if ($datahubdisabled) {
+            return;
+        }
+
+        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
     }
 }
