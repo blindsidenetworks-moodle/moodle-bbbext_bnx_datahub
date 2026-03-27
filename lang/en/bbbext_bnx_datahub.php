@@ -26,7 +26,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['attendance'] = 'Attendance';
-$string['attendancereport'] = 'Attendance report';
 $string['attendee'] = 'BigBlueButton Attendee';
 $string['attendee:elapsedtime'] = 'Elapsed time';
 $string['attendee:engchats'] = 'Chats';
@@ -45,7 +44,6 @@ $string['attendee:timeleave'] = 'Time left';
 $string['attendees'] = 'Attendees';
 $string['bnx_datahub:viewreports'] = 'View BigBlueButton BNX reports';
 $string['engagement'] = 'Engagement';
-$string['engagementreport'] = 'Engagement report';
 $string['entity:attendee'] = 'Attendee';
 $string['entity:meeting'] = 'Meeting';
 $string['entity:room'] = 'Room';
@@ -78,8 +76,8 @@ $string['privacy:metadata:score'] = 'The engagement score of the user.';
 $string['privacy:metadata:timejoin'] = 'The time when the user joined the meeting.';
 $string['privacy:metadata:timeleave'] = 'The time when the user left the meeting.';
 $string['privacy:metadata:userid'] = 'The Moodle user ID of the meeting participant.';
-$string['reportattendance'] = 'Attendance report';
-$string['reportengagement'] = 'Engagement report';
+$string['reportattendance'] = 'Attendance report +';
+$string['reportengagement'] = 'Engagement report +';
 $string['room'] = 'BigBlueButton Room';
 $string['room:id'] = 'Room ID';
 $string['room:name'] = 'Room name';

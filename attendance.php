@@ -37,7 +37,7 @@ if ($cmid) {
     $PAGE->set_context($context);
     $PAGE->set_cm($cm);
     $PAGE->set_url(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php', ['cmid' => $cmid]));
-    $PAGE->set_title(format_string($bigbluebuttonbn->name) . ' - ' . get_string('attendancereport', 'bbbext_bnx_datahub'));
+    $PAGE->set_title(format_string($bigbluebuttonbn->name) . ' - ' . get_string('reportattendance', 'bbbext_bnx_datahub'));
     $PAGE->set_heading(format_string($course->fullname));
 } else {
     // Site-wide report.
@@ -45,8 +45,8 @@ if ($cmid) {
     $context = context_system::instance();
     $PAGE->set_context($context);
     $PAGE->set_url(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php'));
-    $PAGE->set_title(get_string('attendancereport', 'bbbext_bnx_datahub'));
-    $PAGE->set_heading(get_string('attendancereport', 'bbbext_bnx_datahub'));
+    $PAGE->set_title(get_string('reportattendance', 'bbbext_bnx_datahub'));
+    $PAGE->set_heading(get_string('reportattendance', 'bbbext_bnx_datahub'));
 }
 
 // Check capability.
