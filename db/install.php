@@ -27,6 +27,11 @@
  * Perform the post-install procedures.
  */
 function xmldb_bbbext_bnx_datahub_install() {
+    require_once(__DIR__ . '/migration.php');
+
     // Ensure meeting events are enabled on install.
     set_config('bigbluebuttonbn_meetingevents_enabled', 1);
+
+    // Migrate legacy BN Reports data/settings and disable bnreports if present.
+    bbbext_bnx_datahub_migrate_bnreports_data();
 }

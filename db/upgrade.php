@@ -30,6 +30,8 @@
  * @return bool Whether the upgrade was successful.
  */
 function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
+    require_once(__DIR__ . '/migration.php');
+
     if ($oldversion < 2026012202) {
         // Ensure BigBlueButton meeting events are enabled when bnx_datahub is upgraded/enabled.
         set_config('bigbluebuttonbn_meetingevents_enabled', 1);
@@ -42,6 +44,13 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
         set_config('bigbluebuttonbn_meetingevents_enabled', 1);
 
         upgrade_plugin_savepoint(true, 2026031300, 'bbbext', 'bnx_datahub');
+    }
+
+    if ($oldversion < 2026031301) {
+        // Backfill BN Reports migration for instances installed before this release.
+        bbbext_bnx_datahub_migrate_bnreports_data();
+
+        upgrade_plugin_savepoint(true, 2026031301, 'bbbext', 'bnx_datahub');
     }
 
     return true;
