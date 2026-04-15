@@ -95,10 +95,22 @@ class logger {
     public static function log_meeting_user(int $meetingid, stdClass $data): int {
         global $DB;
 
+        // Skip non-Moodle participants (e.g. AI bot) whose ext_user_id is not a
+        // numeric Moodle user ID. The datahub tracks enrolled-user engagement; bots
+        // have no Moodle account and cannot be looked up via core_user::get_user().
+        if (!is_numeric($data->ext_user_id)) {
+            debugging(
+                '[bbbext_bnx_datahub] logger::log_meeting_user Skipping non-Moodle participant'
+                    . ' (ext_user_id=' . $data->ext_user_id . ')',
+                DEBUG_DEVELOPER
+            );
+            return 0;
+        }
+
         $record = new stdClass();
         $record->meetingid = $meetingid;
-        $record->userid = $data->ext_user_id;
-        $record->fullname = fullname(core_user::get_user($data->ext_user_id));
+        $record->userid = (int) $data->ext_user_id;
+        $record->fullname = fullname(core_user::get_user((int) $data->ext_user_id));
         if ($data->moderator == 'true') {
             $record->role = 'moderator';
         } else {
