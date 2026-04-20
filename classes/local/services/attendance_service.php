@@ -28,7 +28,6 @@ namespace bbbext_bnx_datahub\local\services;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class attendance_service {
-
     /**
      * Return all attendance records for the most recent meeting of a course module.
      *

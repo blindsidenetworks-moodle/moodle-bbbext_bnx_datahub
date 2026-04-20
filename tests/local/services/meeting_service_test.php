@@ -28,7 +28,6 @@ use stdClass;
  * @covers    \bbbext_bnx_datahub\local\services\meeting_service
  */
 final class meeting_service_test extends advanced_testcase {
-
     /** @var stdClass Course object. */
     private stdClass $course;
 

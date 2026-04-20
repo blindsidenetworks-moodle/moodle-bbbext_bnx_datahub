@@ -28,7 +28,6 @@ namespace bbbext_bnx_datahub\local\services;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class meeting_service {
-
     /**
      * Base SQL fragment that resolves the cmid → meeting join chain.
      *
