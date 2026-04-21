@@ -36,6 +36,7 @@ final class logger_test extends advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
+        set_config('enable_debug_logging', 1, 'bbbext_bnx_datahub');
     }
 
     /**
