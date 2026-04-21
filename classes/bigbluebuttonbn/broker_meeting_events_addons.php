@@ -16,6 +16,7 @@
 
 namespace bbbext_bnx_datahub\bigbluebuttonbn;
 
+use bbbext_bnx_datahub\local\helpers\debug_helper;
 use bbbext_bnx_datahub\logger;
 
 /**
@@ -43,7 +44,7 @@ class broker_meeting_events_addons extends \mod_bigbluebuttonbn\local\extension\
         $jsonobj = json_decode($this->data);
 
         if (!isset($jsonobj->data)) {
-            debugging('Warning: Missing data object in JSON.', DEBUG_DEVELOPER);
+            debug_helper::developer('Warning: Missing data object in JSON.');
             return;
         }
 
@@ -56,7 +57,7 @@ class broker_meeting_events_addons extends \mod_bigbluebuttonbn\local\extension\
                 logger::log_meeting_user($meetingid, $attendee);
             }
         } else {
-            debugging('Warning: No attendees found or invalid type. Data: ' . json_encode($jsonobj->data), DEBUG_DEVELOPER);
+            debug_helper::developer('Warning: No attendees found or invalid type. Data: ' . json_encode($jsonobj->data));
         }
     }
 }

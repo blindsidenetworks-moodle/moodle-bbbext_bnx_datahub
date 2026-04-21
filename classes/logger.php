@@ -16,6 +16,7 @@
 
 namespace bbbext_bnx_datahub;
 
+use bbbext_bnx_datahub\local\helpers\debug_helper;
 use core_user;
 use stdClass;
 use mod_bigbluebuttonbn\instance;
@@ -42,7 +43,7 @@ class logger {
         // Get the bnx record for this instance.
         $bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $instance->get_instance_id()]);
         if (!$bnx) {
-            debugging('[bbbext_bnx_datahub] logger::log_meeting No BNX record found for instance.', DEBUG_DEVELOPER);
+            debug_helper::developer('[bbbext_bnx_datahub] logger::log_meeting No BNX record found for instance.');
             return 0;
         }
 
@@ -79,7 +80,7 @@ class logger {
 
         // Optionally check the result.
         if (!$r) {
-            debugging('[bbbext_bnx_datahub] logger::log_meeting Error during upsert operation.', DEBUG_DEVELOPER);
+            debug_helper::developer('[bbbext_bnx_datahub] logger::log_meeting Error during upsert operation.');
         }
 
         return $r;
@@ -99,10 +100,9 @@ class logger {
         // numeric Moodle user ID. The datahub tracks enrolled-user engagement; bots
         // have no Moodle account and cannot be looked up via core_user::get_user().
         if (!is_numeric($data->ext_user_id)) {
-            debugging(
+            debug_helper::developer(
                 '[bbbext_bnx_datahub] logger::log_meeting_user Skipping non-Moodle participant'
-                    . ' (ext_user_id=' . $data->ext_user_id . ')',
-                DEBUG_DEVELOPER
+                    . ' (ext_user_id=' . $data->ext_user_id . ')'
             );
             return 0;
         }
@@ -144,7 +144,7 @@ class logger {
 
         // Optionally check the result.
         if (!$r) {
-            debugging('[bbbext_bnx_datahub] logger::log_meeting_user Error during upsert operation.', DEBUG_DEVELOPER);
+            debug_helper::developer('[bbbext_bnx_datahub] logger::log_meeting_user Error during upsert operation.');
         }
 
         return $r;
