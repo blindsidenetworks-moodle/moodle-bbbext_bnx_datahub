@@ -30,6 +30,8 @@ final class install_migration_test extends \advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
+        // Sidecar-contract bootstrap (CC-2).
+        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
         $this->setAdminUser();
 
         require_once(__DIR__ . '/../db/migration.php');

@@ -40,6 +40,8 @@ final class privacy_provider_test extends provider_testcase {
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
+        // Sidecar-contract bootstrap (CC-2).
+        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
     }
 
     /**

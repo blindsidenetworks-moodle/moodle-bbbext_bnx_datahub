@@ -36,6 +36,10 @@ final class logger_test extends advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
+        // Sidecar-contract bootstrap (CC-2): the parent setting is no longer
+        // auto-enabled by bbbext_bnx_datahub install (OL-3.2.1), so each test
+        // that exercises BBB activity flows must seed it explicitly.
+        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
         set_config('enable_debug_logging', 1, 'bbbext_bnx_datahub');
     }
 
