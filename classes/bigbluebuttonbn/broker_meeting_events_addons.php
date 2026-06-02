@@ -53,9 +53,9 @@ class broker_meeting_events_addons extends \mod_bigbluebuttonbn\local\extension\
         $meetingid = logger::log_meeting($this->instance, $meetingdata);
 
         if (!empty($jsonobj->data->attendees) && is_array($jsonobj->data->attendees)) {
-            foreach ($jsonobj->data->attendees as $attendee) {
-                logger::log_meeting_user($meetingid, $attendee);
-            }
+            // Batch all attendees in a single call so user lookups and existing-row
+            // resolution are amortized to one DB round-trip per query (OL-3.1.2).
+            logger::log_meeting_users($meetingid, $jsonobj->data->attendees);
         } else {
             debug_helper::developer('Warning: No attendees found or invalid type. Data: ' . json_encode($jsonobj->data));
         }

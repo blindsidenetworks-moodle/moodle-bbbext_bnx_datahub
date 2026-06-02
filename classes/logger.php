@@ -17,7 +17,6 @@
 namespace bbbext_bnx_datahub;
 
 use bbbext_bnx_datahub\local\helpers\debug_helper;
-use core_user;
 use stdClass;
 use mod_bigbluebuttonbn\instance;
 
@@ -101,59 +100,118 @@ class logger {
      * @return int                The log entry ID or a status code indicating the result.
      */
     public static function log_meeting_user(int $meetingid, stdClass $data): int {
+        $result = self::log_meeting_users($meetingid, [$data]);
+        return $result['ids'][0] ?? 0;
+    }
+
+    /**
+     * Batch log a list of attendees against a meeting in O(1) database round-trips
+     * for user lookups and existing-row resolution (OL-3.1.2).
+     *
+     * Per-row writes (update_record / insert_records) remain the only safe way to
+     * keep both inserts and updates auditable, but every read - the user fetch and
+     * the existing-attendee lookup - is collapsed into a single batch query that
+     * is shared by the whole attendee list.
+     *
+     * @param int        $meetingid Meeting id the attendees belong to.
+     * @param stdClass[] $attendees List of attendee payload objects.
+     * @return array{ids: int[], skipped: int} Map of stored row ids and skipped count.
+     */
+    public static function log_meeting_users(int $meetingid, array $attendees): array {
         global $DB;
 
-        // Skip non-Moodle participants (e.g. AI bot) whose ext_user_id is not a
-        // numeric Moodle user ID. The datahub tracks enrolled-user engagement; bots
-        // have no Moodle account and cannot be looked up via core_user::get_user().
-        if (!is_numeric($data->ext_user_id)) {
-            debug_helper::developer(
-                '[bbbext_bnx_datahub] logger::log_meeting_user Skipping non-Moodle participant'
-                    . ' (ext_user_id=' . $data->ext_user_id . ')'
-            );
-            return 0;
+        $ids = [];
+        $skipped = 0;
+        if (empty($attendees)) {
+            return ['ids' => $ids, 'skipped' => $skipped];
         }
 
-        $record = new stdClass();
-        $record->meetingid = $meetingid;
-        $record->userid = (int) $data->ext_user_id;
-        $record->fullname = fullname(core_user::get_user((int) $data->ext_user_id));
-        if ($data->moderator == 'true') {
-            $record->role = 'moderator';
-        } else {
-            $record->role = 'viewer';
-        }
-        $record->timejoin = strtotime($data->joins[0]);
-        $record->timeleave = strtotime($data->leaves[0]);
-        $record->elapsedtime = $data->duration;
-        $record->engchats = $data->engagement->chats;
-        $record->engtalks = $data->engagement->talks;
-        $record->engraisehand = $data->engagement->raisehand;
-        $record->engemojis = $data->engagement->emojis;
-        $record->engpollvotes = $data->engagement->poll_votes;
-        $record->engtalktime = $data->engagement->talk_time;
-        $record->rawdata = json_encode($data);
-
-        // Define the conditions to identify the record.
-        $conditions = ['meetingid' => $record->meetingid, 'userid' => $record->userid];
-
-        // Try to retrieve the existing record.
-        $existingrecord = $DB->get_record('bbbext_bnx_datahub_meeting_user', $conditions);
-
-        if ($existingrecord) {
-            // Update the existing record.
-            $record->id = $existingrecord->id;
-            $r = $DB->update_record('bbbext_bnx_datahub_meeting_user', $record);
-        } else {
-            // Insert a new record.
-            $r = $DB->insert_record('bbbext_bnx_datahub_meeting_user', $record);
+        // Filter to numeric ext_user_ids so we can resolve them via core_user
+        // without per-row lookups; skip non-Moodle participants such as AI bots.
+        $eligible = [];
+        $userids = [];
+        foreach ($attendees as $attendee) {
+            if (!isset($attendee->ext_user_id) || !is_numeric($attendee->ext_user_id)) {
+                debug_helper::developer(
+                    '[bbbext_bnx_datahub] logger::log_meeting_users Skipping non-Moodle participant'
+                    . ' (ext_user_id=' . ($attendee->ext_user_id ?? 'null') . ')'
+                );
+                $skipped++;
+                continue;
+            }
+            $userid = (int) $attendee->ext_user_id;
+            $eligible[] = ['userid' => $userid, 'data' => $attendee];
+            $userids[$userid] = true;
         }
 
-        // Optionally check the result.
-        if (!$r) {
-            debug_helper::developer('[bbbext_bnx_datahub] logger::log_meeting_user Error during upsert operation.');
+        if (empty($eligible)) {
+            return ['ids' => $ids, 'skipped' => $skipped];
         }
 
-        return $r;
+        // Single batched fetch for both user lookups and existing attendee rows.
+        $userids = array_keys($userids);
+        $users = $DB->get_records_list('user', 'id', $userids);
+        [$insql, $inparams] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED, 'uid');
+        $inparams['meetingid'] = $meetingid;
+        $existing = $DB->get_records_select(
+            'bbbext_bnx_datahub_meeting_user',
+            "meetingid = :meetingid AND userid {$insql}",
+            $inparams,
+            '',
+            'userid, id'
+        );
+
+        $newrecords = [];
+        foreach ($eligible as $entry) {
+            $userid = $entry['userid'];
+            $data = $entry['data'];
+            $user = $users[$userid] ?? null;
+            if ($user === null) {
+                debug_helper::developer(
+                    '[bbbext_bnx_datahub] logger::log_meeting_users Skipping unknown user (id=' . $userid . ')'
+                );
+                $skipped++;
+                continue;
+            }
+
+            $record = new stdClass();
+            $record->meetingid = $meetingid;
+            $record->userid = $userid;
+            $record->fullname = fullname($user);
+            $record->role = ($data->moderator ?? '') === 'true' ? 'moderator' : 'viewer';
+            $record->timejoin = strtotime($data->joins[0] ?? '');
+            $record->timeleave = strtotime($data->leaves[0] ?? '');
+            $record->elapsedtime = $data->duration ?? 0;
+            $record->engchats = $data->engagement->chats ?? 0;
+            $record->engtalks = $data->engagement->talks ?? 0;
+            $record->engraisehand = $data->engagement->raisehand ?? 0;
+            $record->engemojis = $data->engagement->emojis ?? 0;
+            $record->engpollvotes = $data->engagement->poll_votes ?? 0;
+            $record->engtalktime = $data->engagement->talk_time ?? 0;
+            $record->rawdata = json_encode($data);
+
+            if (isset($existing[$userid])) {
+                $record->id = (int) $existing[$userid]->id;
+                if ($DB->update_record('bbbext_bnx_datahub_meeting_user', $record)) {
+                    $ids[] = $record->id;
+                } else {
+                    debug_helper::developer(
+                        '[bbbext_bnx_datahub] logger::log_meeting_users Error during update operation.'
+                    );
+                }
+            } else {
+                $newrecords[] = $record;
+            }
+        }
+
+        // Batch insert all new attendee rows in a single round-trip.
+        if (!empty($newrecords)) {
+            $newids = $DB->insert_records('bbbext_bnx_datahub_meeting_user', $newrecords);
+            foreach ($newids as $newid) {
+                $ids[] = (int) $newid;
+            }
+        }
+
+        return ['ids' => $ids, 'skipped' => $skipped];
     }
 }
