@@ -80,13 +80,15 @@ class engagement extends system_report {
             "LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid"
         );
 
-        // Join bbbext_bnx to get bigbluebuttonbnid.
-        $this->add_join("LEFT JOIN {bbbext_bnx} bnx ON bnx.id = {$meetingalias}.bnxid");
+        // Join bbbext_bnx to get bigbluebuttonbnid. Use the meeting entity's alias helper so the alias
+        // is derived dynamically and cannot collide when the same table is joined elsewhere.
+        $bnxalias = $meetingentity->get_table_alias('bbbext_bnx');
+        $this->add_join("LEFT JOIN {bbbext_bnx} {$bnxalias} ON {$bnxalias}.id = {$meetingalias}.bnxid");
 
         $roomentity = new room();
         $roomalias = $roomentity->get_table_alias('bigbluebuttonbn');
         $this->add_entity($roomentity);
-        $this->add_join("LEFT JOIN {bigbluebuttonbn} {$roomalias} ON {$roomalias}.id = bnx.bigbluebuttonbnid");
+        $this->add_join("LEFT JOIN {bigbluebuttonbn} {$roomalias} ON {$roomalias}.id = {$bnxalias}.bigbluebuttonbnid");
 
         $courseentity = new course();
         $coursealias = $courseentity->get_table_alias('course');
@@ -102,10 +104,15 @@ class engagement extends system_report {
     /**
      * Validates access to view this report.
      *
+     * Enforces the plugin's `bbbext/bnx_datahub:viewreports` capability against the
+     * report's bound context (module context when invoked from an activity, system
+     * context when invoked site-wide). Replaces the previous `return true` gate.
+     *
      * @return bool
      */
     protected function can_view(): bool {
-        return true;
+        $context = $this->get_context() ?? \context_system::instance();
+        return has_capability('bbbext/bnx_datahub:viewreports', $context);
     }
 
     /**
@@ -174,9 +181,10 @@ class engagement extends system_report {
                 $bigbluebuttonbnid = (int)$cm->instance;
             }
         }
-        // Fallback to request param for non-AJAX page loads.
+        // Fall back to the constructor parameter rather than reading the request directly,
+        // so this report class is not coupled to the global request state (OL-4.1.3).
         if (!$bigbluebuttonbnid) {
-            $bigbluebuttonbnid = optional_param('id', 0, PARAM_INT);
+            $bigbluebuttonbnid = (int) $this->get_parameter('bigbluebuttonbnid', 0, PARAM_INT);
         }
 
         if ($bigbluebuttonbnid) {
