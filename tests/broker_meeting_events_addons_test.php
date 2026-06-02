@@ -35,6 +35,8 @@ final class broker_meeting_events_addons_test extends advanced_testcase {
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
+        // Sidecar-contract bootstrap (CC-2).
+        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
         set_config('enable_debug_logging', 1, 'bbbext_bnx_datahub');
     }
 

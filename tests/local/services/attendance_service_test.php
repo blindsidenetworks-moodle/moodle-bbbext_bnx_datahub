@@ -47,6 +47,8 @@ final class attendance_service_test extends advanced_testcase {
         global $DB;
         parent::setUp();
         $this->resetAfterTest();
+        // Sidecar-contract bootstrap (CC-2).
+        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
 
         $this->course = $this->getDataGenerator()->create_course();
         $this->bbb = $this->getDataGenerator()->create_module('bigbluebuttonbn', [
