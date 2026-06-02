@@ -275,10 +275,10 @@ function bbbext_bnx_datahub_migrate_bnreports_users(array $meetingidmap): void {
  *
  * @param int             $moduleid
  * @param int             $now
- * @param array<int, object>|null &$cache Optional cache keyed by bigbluebuttonbnid.
+ * @param array<int, object>|null $cache Optional cache keyed by bigbluebuttonbnid.
  * @return int|null
  */
-function bbbext_bnx_datahub_ensure_bnx_record(int $moduleid, int $now, ?array &$cache = null): ?int {
+function bbbext_bnx_datahub_ensure_bnx_record(int $moduleid, int $now, ?array $cache = null): ?int {
     global $DB;
 
     if ($cache !== null && isset($cache[$moduleid]) && isset($cache[$moduleid]->id)) {
