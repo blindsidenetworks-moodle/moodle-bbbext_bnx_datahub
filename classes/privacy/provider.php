@@ -120,60 +120,74 @@ class provider implements
 
         $userid = $contextlist->get_user()->id;
 
+        // Collect module-context cm ids in one pass; the export loop below
+        // executes a single batched query against all of them (OL-3.1.2).
+        $cmids = [];
+        $contextsbycmid = [];
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel !== CONTEXT_MODULE) {
                 continue;
             }
+            $cmids[] = (int) $context->instanceid;
+            $contextsbycmid[(int) $context->instanceid] = $context;
+        }
 
-            $sql = "SELECT mu.*,
-                           mtg.meetingname,
-                           mtg.externalmeetingid,
-                           mtg.internalmeetingid,
-                           mtg.timestart AS meeting_timestart,
-                           mtg.timeend AS meeting_timeend,
-                           mtg.metadata AS meeting_metadata
-                      FROM {bbbext_bnx_datahub_meeting_user} mu
-                      JOIN {bbbext_bnx_datahub_meeting} mtg ON mtg.id = mu.meetingid
-                      JOIN {bbbext_bnx} bnx ON bnx.id = mtg.bnxid
-                      JOIN {bigbluebuttonbn} bbb ON bbb.id = bnx.bigbluebuttonbnid
-                      JOIN {course_modules} cm ON cm.instance = bbb.id
-                      JOIN {modules} m ON m.id = cm.module AND m.name = :modname
-                     WHERE cm.id = :cmid AND mu.userid = :userid";
+        if (empty($cmids)) {
+            return;
+        }
 
-            $params = [
-                'modname' => 'bigbluebuttonbn',
-                'cmid' => $context->instanceid,
-                'userid' => $userid,
-            ];
+        [$insql, $inparams] = $DB->get_in_or_equal($cmids, SQL_PARAMS_NAMED, 'cmid');
+        $sql = "SELECT mu.*,
+                       mtg.meetingname,
+                       mtg.externalmeetingid,
+                       mtg.internalmeetingid,
+                       mtg.timestart AS meeting_timestart,
+                       mtg.timeend AS meeting_timeend,
+                       mtg.metadata AS meeting_metadata,
+                       cm.id AS cmid
+                  FROM {bbbext_bnx_datahub_meeting_user} mu
+                  JOIN {bbbext_bnx_datahub_meeting} mtg ON mtg.id = mu.meetingid
+                  JOIN {bbbext_bnx} bnx ON bnx.id = mtg.bnxid
+                  JOIN {bigbluebuttonbn} bbb ON bbb.id = bnx.bigbluebuttonbnid
+                  JOIN {course_modules} cm ON cm.instance = bbb.id
+                  JOIN {modules} m ON m.id = cm.module AND m.name = :modname
+                 WHERE cm.id {$insql} AND mu.userid = :userid";
+        $params = array_merge($inparams, [
+            'modname' => 'bigbluebuttonbn',
+            'userid' => $userid,
+        ]);
 
-            $records = $DB->get_records_sql($sql, $params);
+        $records = $DB->get_records_sql($sql, $params);
 
-            foreach ($records as $record) {
-                $exportpath = [
-                    get_string('pluginname', 'bbbext_bnx_datahub'),
-                    $record->meetingname,
-                ];
-                writer::with_context($context)->export_data($exportpath, (object)[
-                    'meetingname' => $record->meetingname,
-                    'externalmeetingid' => $record->externalmeetingid,
-                    'internalmeetingid' => $record->internalmeetingid,
-                    'meeting_timestart' => transform::datetime($record->meeting_timestart),
-                    'meeting_timeend' => transform::datetime($record->meeting_timeend),
-                    'meeting_metadata' => $record->meeting_metadata,
-                    'fullname' => $record->fullname,
-                    'role' => $record->role,
-                    'timejoin' => transform::datetime($record->timejoin),
-                    'timeleave' => transform::datetime($record->timeleave),
-                    'elapsedtime' => $record->elapsedtime,
-                    'score' => $record->score,
-                    'engchats' => $record->engchats,
-                    'engtalks' => $record->engtalks,
-                    'engraisehand' => $record->engraisehand,
-                    'engemojis' => $record->engemojis,
-                    'engpollvotes' => $record->engpollvotes,
-                    'engtalktime' => $record->engtalktime,
-                ]);
+        foreach ($records as $record) {
+            $context = $contextsbycmid[(int) $record->cmid] ?? null;
+            if ($context === null) {
+                continue;
             }
+            $exportpath = [
+                get_string('pluginname', 'bbbext_bnx_datahub'),
+                $record->meetingname,
+            ];
+            writer::with_context($context)->export_data($exportpath, (object)[
+                'meetingname' => $record->meetingname,
+                'externalmeetingid' => $record->externalmeetingid,
+                'internalmeetingid' => $record->internalmeetingid,
+                'meeting_timestart' => transform::datetime($record->meeting_timestart),
+                'meeting_timeend' => transform::datetime($record->meeting_timeend),
+                'meeting_metadata' => $record->meeting_metadata,
+                'fullname' => $record->fullname,
+                'role' => $record->role,
+                'timejoin' => transform::datetime($record->timejoin),
+                'timeleave' => transform::datetime($record->timeleave),
+                'elapsedtime' => $record->elapsedtime,
+                'score' => $record->score,
+                'engchats' => $record->engchats,
+                'engtalks' => $record->engtalks,
+                'engraisehand' => $record->engraisehand,
+                'engemojis' => $record->engemojis,
+                'engpollvotes' => $record->engpollvotes,
+                'engtalktime' => $record->engtalktime,
+            ]);
         }
     }
 
@@ -224,31 +238,38 @@ class provider implements
 
         $userid = $contextlist->get_user()->id;
 
+        // Collect every cmid from the approved contextlist and resolve all the user's
+        // attendee row ids in a single batched query (OL-3.1.2).
+        $cmids = [];
         foreach ($contextlist->get_contexts() as $context) {
             if ($context->contextlevel !== CONTEXT_MODULE) {
                 continue;
             }
+            $cmids[] = (int) $context->instanceid;
+        }
 
-            $sql = "SELECT mu.id
-                      FROM {bbbext_bnx_datahub_meeting_user} mu
-                      JOIN {bbbext_bnx_datahub_meeting} mtg ON mtg.id = mu.meetingid
-                      JOIN {bbbext_bnx} bnx ON bnx.id = mtg.bnxid
-                      JOIN {bigbluebuttonbn} bbb ON bbb.id = bnx.bigbluebuttonbnid
-                      JOIN {course_modules} cm ON cm.instance = bbb.id
-                      JOIN {modules} m ON m.id = cm.module AND m.name = :modname
-                     WHERE cm.id = :cmid AND mu.userid = :userid";
+        if (empty($cmids)) {
+            return;
+        }
 
-            $params = [
-                'modname' => 'bigbluebuttonbn',
-                'cmid' => $context->instanceid,
-                'userid' => $userid,
-            ];
+        [$insql, $inparams] = $DB->get_in_or_equal($cmids, SQL_PARAMS_NAMED, 'cmid');
+        $sql = "SELECT mu.id
+                  FROM {bbbext_bnx_datahub_meeting_user} mu
+                  JOIN {bbbext_bnx_datahub_meeting} mtg ON mtg.id = mu.meetingid
+                  JOIN {bbbext_bnx} bnx ON bnx.id = mtg.bnxid
+                  JOIN {bigbluebuttonbn} bbb ON bbb.id = bnx.bigbluebuttonbnid
+                  JOIN {course_modules} cm ON cm.instance = bbb.id
+                  JOIN {modules} m ON m.id = cm.module AND m.name = :modname
+                 WHERE cm.id {$insql} AND mu.userid = :userid";
+        $params = array_merge($inparams, [
+            'modname' => 'bigbluebuttonbn',
+            'userid' => $userid,
+        ]);
 
-            $records = $DB->get_records_sql($sql, $params);
-            if (!empty($records)) {
-                $ids = array_keys($records);
-                $DB->delete_records_list('bbbext_bnx_datahub_meeting_user', 'id', $ids);
-            }
+        $records = $DB->get_records_sql($sql, $params);
+        if (!empty($records)) {
+            $ids = array_keys($records);
+            $DB->delete_records_list('bbbext_bnx_datahub_meeting_user', 'id', $ids);
         }
     }
 
