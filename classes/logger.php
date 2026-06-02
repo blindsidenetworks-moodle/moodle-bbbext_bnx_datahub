@@ -69,13 +69,20 @@ class logger {
         $existingrecord = $DB->get_record('bbbext_bnx_datahub_meeting', $conditions);
 
         if ($existingrecord) {
-            // Update the existing record.
+            // Update the existing record. Capture update_record's boolean return separately
+            // from the record id so the error gate below catches update failures (OL-3.1.3).
             $record->id = $existingrecord->id;
-            $r = $DB->update_record('bbbext_bnx_datahub_meeting', $record);
-            $r = $existingrecord->id;
+            $updated = $DB->update_record('bbbext_bnx_datahub_meeting', $record);
+            if (!$updated) {
+                debug_helper::developer(
+                    '[bbbext_bnx_datahub] logger::log_meeting Error during update operation.'
+                );
+                return 0;
+            }
+            $r = (int) $existingrecord->id;
         } else {
             // Insert a new record.
-            $r = $DB->insert_record('bbbext_bnx_datahub_meeting', $record);
+            $r = (int) $DB->insert_record('bbbext_bnx_datahub_meeting', $record);
         }
 
         // Optionally check the result.
