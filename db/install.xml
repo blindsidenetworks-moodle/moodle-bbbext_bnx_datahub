@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/bigbluebuttonbn/extension/bnx_datahub/db" VERSION="2026012200" COMMENT="XMLDB file for Moodle bbbext_bnx_datahub plugin">
+<XMLDB PATH="mod/bigbluebuttonbn/extension/bnx_datahub/db" VERSION="2026060200" COMMENT="XMLDB file for Moodle bbbext_bnx_datahub plugin">
     <TABLES>
         <TABLE NAME="bbbext_bnx_datahub_meeting" COMMENT="Meetings held in BBB and reported by Analytics Callback">
             <FIELDS>
