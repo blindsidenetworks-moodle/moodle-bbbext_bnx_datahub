@@ -108,7 +108,8 @@ class room extends base {
                 if ($name === null) {
                     return '';
                 }
-                return format_text($name);
+                // Short identifier: use format_string with an explicit context (OL-3.2.4).
+                return format_string($name, true, ['context' => \context_system::instance()]);
             });
 
         // Time created.

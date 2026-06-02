@@ -108,7 +108,8 @@ class meeting extends base {
                 if ($id === null) {
                     return '';
                 }
-                return format_text($id);
+                // Short identifier: use format_string with an explicit context (OL-3.2.4).
+                return format_string($id, true, ['context' => \context_system::instance()]);
             });
 
         // Meeting name.
@@ -124,7 +125,8 @@ class meeting extends base {
                 if ($name === null) {
                     return '';
                 }
-                return format_text($name);
+                // Short identifier: use format_string with an explicit context (OL-3.2.4).
+                return format_string($name, true, ['context' => \context_system::instance()]);
             });
 
         // Time start.
