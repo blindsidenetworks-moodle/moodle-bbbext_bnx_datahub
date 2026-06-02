@@ -30,7 +30,6 @@ namespace bbbext_bnx_datahub;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class meetingevents_enablement_test extends \advanced_testcase {
-
     /**
      * Install must NOT touch the parent meeting events setting.
      *
