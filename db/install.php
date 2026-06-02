@@ -29,8 +29,12 @@
 function xmldb_bbbext_bnx_datahub_install() {
     require_once(__DIR__ . '/migration.php');
 
-    // Ensure meeting events are enabled on install.
-    set_config('bigbluebuttonbn_meetingevents_enabled', 1);
+    // Note: bigbluebuttonbn_meetingevents_enabled is intentionally NOT modified
+    // here. As a sidecar subplugin of mod_bigbluebuttonbn, bbbext_bnx_datahub
+    // must not silently flip its parent's settings. Operators are responsible
+    // for enabling meeting events on the parent plugin; the
+    // bbbext_bnx_datahub\check\meetingevents_enabled status check surfaces
+    // the requirement (OL-3.2.1).
 
     // Migrate legacy BN Reports data/settings and disable bnreports if present.
     bbbext_bnx_datahub_migrate_bnreports_data();
