@@ -43,6 +43,16 @@ class meeting_service {
     ";
 
     /**
+     * Explicit column list for bbbext_bnx_datahub_meeting (avoid SELECT m.*).
+     *
+     * Mirrors db/install.xml so adding a new column is a deliberate change
+     * here and downstream consumers do not silently inherit unexpected fields
+     * (OL-4.1.6).
+     */
+    private const MEETING_COLUMNS = "m.id, m.bnxid, m.externalmeetingid, m.internalmeetingid,
+        m.meetingname, m.timestart, m.timeend, m.duration, m.metadata, m.rawdata";
+
+    /**
      * Return the most recent meeting for a given course module ID.
      *
      * @param int $cmid Course module ID.
@@ -51,7 +61,7 @@ class meeting_service {
     public static function get_by_cmid(int $cmid): ?\stdClass {
         global $DB;
 
-        $sql = "SELECT m.*" . self::JOIN_SQL . "WHERE cm.id = :cmid ORDER BY m.timestart DESC";
+        $sql = "SELECT " . self::MEETING_COLUMNS . self::JOIN_SQL . "WHERE cm.id = :cmid ORDER BY m.timestart DESC";
         $records = $DB->get_records_sql($sql, ['cmid' => $cmid], 0, 1);
 
         return !empty($records) ? reset($records) : null;
@@ -66,7 +76,7 @@ class meeting_service {
     public static function get_all_by_cmid(int $cmid): array {
         global $DB;
 
-        $sql = "SELECT m.*" . self::JOIN_SQL . "WHERE cm.id = :cmid ORDER BY m.timestart DESC";
+        $sql = "SELECT " . self::MEETING_COLUMNS . self::JOIN_SQL . "WHERE cm.id = :cmid ORDER BY m.timestart DESC";
 
         return array_values($DB->get_records_sql($sql, ['cmid' => $cmid]));
     }
