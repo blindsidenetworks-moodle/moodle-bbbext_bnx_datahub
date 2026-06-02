@@ -74,23 +74,23 @@ class engagement extends system_report {
         $this->add_entity($userentity);
 
         $meetingentity = new meeting();
-        $meetingalias = $this->get_unique_table_alias('bbbext_bnx_datahub_meeting', 0);
+        $meetingalias = $meetingentity->get_table_alias('bbbext_bnx_datahub_meeting');
         $this->add_entity($meetingentity);
         $this->add_join(
             "LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid"
         );
 
-        // Join bbbext_bnx to get bigbluebuttonbnid.
-        $bnxalias = $this->get_unique_table_alias('bbbext_bnx', 1);
+        // Join bbbext_bnx to get bigbluebuttonbnid (bridge table — not owned by any entity).
+        $bnxalias = 'bnxjoin';
         $this->add_join("LEFT JOIN {bbbext_bnx} {$bnxalias} ON {$bnxalias}.id = {$meetingalias}.bnxid");
 
         $roomentity = new room();
-        $roomalias = $this->get_unique_table_alias('bigbluebuttonbn', 2);
+        $roomalias = $roomentity->get_table_alias('bigbluebuttonbn');
         $this->add_entity($roomentity);
         $this->add_join("LEFT JOIN {bigbluebuttonbn} {$roomalias} ON {$roomalias}.id = {$bnxalias}.bigbluebuttonbnid");
 
         $courseentity = new course();
-        $coursealias = $this->get_unique_table_alias('course', 3);
+        $coursealias = $courseentity->get_table_alias('course');
         $this->add_entity($courseentity);
         $this->add_join("LEFT JOIN {course} {$coursealias} ON {$coursealias}.id = {$roomalias}.course");
 
