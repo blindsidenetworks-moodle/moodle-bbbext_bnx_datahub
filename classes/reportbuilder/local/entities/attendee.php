@@ -21,7 +21,7 @@ namespace bbbext_bnx_datahub\reportbuilder\local\entities;
 use lang_string;
 use stdClass;
 use core_reportbuilder\local\entities\base;
-use core_reportbuilder\local\filters\{date, select, text};
+use core_reportbuilder\local\filters\{select, text};
 use core_reportbuilder\local\helpers\format;
 use core_reportbuilder\local\report\{column, filter};
 
@@ -97,7 +97,8 @@ class attendee extends base {
                 if ($fullname === null) {
                     return '';
                 }
-                return format_text($fullname);
+                // Short identifier: use format_string with an explicit context (OL-3.2.4).
+                return format_string($fullname, true, ['context' => \context_system::instance()]);
             });
 
         // Attendee role.
