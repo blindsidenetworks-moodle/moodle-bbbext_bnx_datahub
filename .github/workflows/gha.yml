@@ -79,14 +79,6 @@ jobs:
       - name: Reinitialize Behat after adding dependency
         run: php moodle/public/admin/tool/behat/cli/init.php
 
-      - name: Bootstrap mod_bigbluebuttonbn meeting events for tests
-        # bbbext_bnx_datahub no longer auto-enables bigbluebuttonbn_meetingevents_enabled
-        # (OL-3.2.1 / sidecar contract). PHPUnit and Behat fixtures rely on the
-        # parent setting being on, so seed it explicitly here as part of the CI
-        # bootstrap (CC-5, mirrors bbbext_bnx workflow at 28a9512).
-        run: |
-          php -r "define('CLI_SCRIPT', true); require 'moodle/public/config.php'; set_config('bigbluebuttonbn_meetingevents_enabled', 1); set_config('meetingevents_enabled', 1, 'mod_bigbluebuttonbn'); echo 'meeting events bootstrapped' . PHP_EOL;"
-
       - name: PHP Lint
         if: ${{ !cancelled() && matrix.runchecks == 'all' }}
         run: moodle-plugin-ci phplint
