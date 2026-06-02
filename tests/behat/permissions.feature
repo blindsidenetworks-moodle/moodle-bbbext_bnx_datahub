@@ -85,11 +85,9 @@ Feature: BigBlueButton Data Hub permissions
     And I log in as "admin"
     Then I should see the engagement report
 
-  @skip
   Scenario: Non-editing teacher without capability does not see report links
-    # This scenario tests role customization, may require capability adjustment
     Given the following "role capability" exists:
-      | role                          | teacher |
+      | role                          | teacher  |
       | bbbext/bnx_datahub:viewreports | prohibit |
     And I change window size to "large"
     And I log in as "teacher2"
