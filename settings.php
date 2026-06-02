@@ -27,8 +27,8 @@ defined('MOODLE_INTERNAL') || die();
 if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configcheckbox(
         'bbbext_bnx_datahub/enable_debug_logging',
-        get_string('config_enable_debug_logging', 'bbbext_bnx_datahub'),
-        get_string('config_enable_debug_logging_desc', 'bbbext_bnx_datahub'),
+        new lang_string('config_enable_debug_logging', 'bbbext_bnx_datahub'),
+        new lang_string('config_enable_debug_logging_desc', 'bbbext_bnx_datahub'),
         0
     ));
 }
