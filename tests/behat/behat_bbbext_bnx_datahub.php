@@ -177,6 +177,7 @@ class behat_bbbext_bnx_datahub extends behat_base {
      *
      * @Then /^meeting data should exist for BigBlueButton activity "(?P<activityname>(?:[^"]|\\")*)"$/
      * @param string $activityname The activity name.
+     * @throws ExpectationException If expected BNX/meeting records are missing.
      */
     public function meeting_data_should_exist(string $activityname): void {
         global $DB;
@@ -205,6 +206,7 @@ class behat_bbbext_bnx_datahub extends behat_base {
      *
      * @Then /^attendee data should exist for meeting "(?P<meetingname>(?:[^"]|\\")*)"$/
      * @param string $meetingname The meeting name.
+     * @throws ExpectationException If expected meeting/attendee records are missing.
      */
     public function attendee_data_should_exist(string $meetingname): void {
         global $DB;
@@ -231,6 +233,7 @@ class behat_bbbext_bnx_datahub extends behat_base {
      *
      * @Then /^no meeting data should exist for BigBlueButton activity "(?P<activityname>(?:[^"]|\\")*)"$/
      * @param string $activityname The activity name.
+     * @throws ExpectationException If unexpected meeting data exists.
      */
     public function no_meeting_data_should_exist(string $activityname): void {
         global $DB;
@@ -275,6 +278,7 @@ class behat_bbbext_bnx_datahub extends behat_base {
      * @Then /^the engagement report should show "(?P<value>(?:[^"]|\\")*)" chats for "(?P<fullname>(?:[^"]|\\")*)"$/
      * @param string $value The expected chat count.
      * @param string $fullname The attendee's full name.
+     * @throws ExpectationException If the attendee cannot be found in report output.
      */
     public function engagement_report_shows_chats(string $value, string $fullname): void {
         // Look for both the user name and the value in the page.

@@ -27,6 +27,9 @@ namespace bbbext_bnx_datahub;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 final class install_migration_test extends \advanced_testcase {
+    /**
+     * Set up for each test.
+     */
     protected function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
