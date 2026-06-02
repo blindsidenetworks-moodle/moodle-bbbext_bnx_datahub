@@ -74,7 +74,7 @@ class engagement extends system_report {
         $this->add_entity($userentity);
 
         $meetingentity = new meeting();
-        $meetingalias = $meetingentity->get_table_alias('bbbext_bnx_datahub_meeting');
+        $meetingalias = $this->get_unique_table_alias('bbbext_bnx_datahub_meeting', 0);
         $this->add_entity($meetingentity);
         $this->add_join(
             "LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid"
@@ -85,12 +85,12 @@ class engagement extends system_report {
         $this->add_join("LEFT JOIN {bbbext_bnx} {$bnxalias} ON {$bnxalias}.id = {$meetingalias}.bnxid");
 
         $roomentity = new room();
-        $roomalias = $roomentity->get_table_alias('bigbluebuttonbn');
+        $roomalias = $this->get_unique_table_alias('bigbluebuttonbn', 2);
         $this->add_entity($roomentity);
         $this->add_join("LEFT JOIN {bigbluebuttonbn} {$roomalias} ON {$roomalias}.id = {$bnxalias}.bigbluebuttonbnid");
 
         $courseentity = new course();
-        $coursealias = $courseentity->get_table_alias('course');
+        $coursealias = $this->get_unique_table_alias('course', 3);
         $this->add_entity($courseentity);
         $this->add_join("LEFT JOIN {course} {$coursealias} ON {$coursealias}.id = {$roomalias}.course");
 
