@@ -109,10 +109,17 @@ final class privacy_provider_test extends provider_testcase {
         $collection = provider::get_metadata($collection);
 
         $items = $collection->get_collection();
-        $this->assertCount(1, $items);
+        $this->assertCount(2, $items);
 
-        $table = reset($items);
-        $this->assertEquals('bbbext_bnx_datahub_meeting_user', $table->get_name());
+        // Check that both tables are declared.
+        $tables = [];
+        foreach ($items as $item) {
+            $tables[$item->get_name()] = $item;
+        }
+        $this->assertArrayHasKey('bbbext_bnx_datahub_meeting', $tables);
+        $this->assertArrayHasKey('bbbext_bnx_datahub_meeting_user', $tables);
+
+        $table = $tables['bbbext_bnx_datahub_meeting_user'];
 
         $privacyfields = $table->get_privacy_fields();
         $this->assertArrayHasKey('userid', $privacyfields);

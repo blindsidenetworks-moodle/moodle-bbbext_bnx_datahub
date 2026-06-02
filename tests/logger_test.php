@@ -218,7 +218,7 @@ final class logger_test extends advanced_testcase {
 
         $this->assertGreaterThan(0, $result);
 
-        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid]);
+        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid, 'userid' => $user->id]);
         $this->assertNotFalse($record);
         $this->assertEquals($user->id, $record->userid);
         $this->assertEquals('viewer', $record->role);
@@ -250,7 +250,7 @@ final class logger_test extends advanced_testcase {
 
         logger::log_meeting_user($meetingid, $attendeedata);
 
-        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid]);
+        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid, 'userid' => $user->id]);
         $this->assertEquals('moderator', $record->role);
     }
 
@@ -283,7 +283,7 @@ final class logger_test extends advanced_testcase {
         $this->assertEquals(1, $count);
 
         // Verify chats count was updated.
-        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid]);
+        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid, 'userid' => $user->id]);
         $this->assertEquals(15, $record->engchats);
     }
 
@@ -360,7 +360,7 @@ final class logger_test extends advanced_testcase {
         $attendeedata = $this->create_attendee_data($user->id);
         logger::log_meeting_user($meetingid, $attendeedata);
 
-        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid]);
+        $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid, 'userid' => $user->id]);
         $rawdata = json_decode($record->rawdata);
 
         $this->assertIsObject($rawdata);

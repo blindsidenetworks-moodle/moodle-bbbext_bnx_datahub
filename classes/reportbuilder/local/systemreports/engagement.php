@@ -80,9 +80,8 @@ class engagement extends system_report {
             "LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid"
         );
 
-        // Join bbbext_bnx to get bigbluebuttonbnid. Use the meeting entity's alias helper so the alias
-        // is derived dynamically and cannot collide when the same table is joined elsewhere.
-        $bnxalias = $meetingentity->get_table_alias('bbbext_bnx');
+        // Join bbbext_bnx to get bigbluebuttonbnid.
+        $bnxalias = $this->get_unique_table_alias('bbbext_bnx', 1);
         $this->add_join("LEFT JOIN {bbbext_bnx} {$bnxalias} ON {$bnxalias}.id = {$meetingalias}.bnxid");
 
         $roomentity = new room();
