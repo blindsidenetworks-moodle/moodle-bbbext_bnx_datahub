@@ -104,6 +104,43 @@ function bbbext_bnx_datahub_migrate_bnreports_meetings(int $now): void {
         return;
     }
 
+    // Pre-fetch all referenced bnx records and existing target meeting rows so the
+    // hot loop does not issue per-row DB queries (OL-3.1.2).
+    $moduleids = [];
+    $internalmeetingids = [];
+    foreach ($legacymeetings as $legacymeeting) {
+        $moduleid = (int) ($legacymeeting->bigbluebuttonbnid ?? 0);
+        if ($moduleid > 0) {
+            $moduleids[$moduleid] = true;
+        }
+        $internal = trim((string) ($legacymeeting->internalmeetingid ?? ''));
+        if ($internal !== '') {
+            $internalmeetingids[$internal] = true;
+        }
+    }
+
+    $bnxbymoduleid = empty($moduleids)
+        ? []
+        : array_column(
+            $DB->get_records_list('bbbext_bnx', 'bigbluebuttonbnid', array_keys($moduleids), '', 'id, bigbluebuttonbnid'),
+            null,
+            'bigbluebuttonbnid'
+        );
+
+    $existingmeetings = empty($internalmeetingids)
+        ? []
+        : array_column(
+            $DB->get_records_list(
+                'bbbext_bnx_datahub_meeting',
+                'internalmeetingid',
+                array_keys($internalmeetingids),
+                '',
+                'id, internalmeetingid'
+            ),
+            null,
+            'internalmeetingid'
+        );
+
     $meetingidmap = [];
     foreach ($legacymeetings as $legacymeeting) {
         $moduleid = (int) ($legacymeeting->bigbluebuttonbnid ?? 0);
@@ -111,7 +148,7 @@ function bbbext_bnx_datahub_migrate_bnreports_meetings(int $now): void {
             continue;
         }
 
-        $bnxid = bbbext_bnx_datahub_ensure_bnx_record($moduleid, $now);
+        $bnxid = bbbext_bnx_datahub_ensure_bnx_record($moduleid, $now, $bnxbymoduleid);
         if ($bnxid === null) {
             continue;
         }
@@ -121,12 +158,8 @@ function bbbext_bnx_datahub_migrate_bnreports_meetings(int $now): void {
             continue;
         }
 
-        $existing = $DB->get_record('bbbext_bnx_datahub_meeting', [
-            'internalmeetingid' => $internalmeetingid,
-        ], 'id');
-
-        if ($existing) {
-            $meetingidmap[(int) $legacymeeting->id] = (int) $existing->id;
+        if (isset($existingmeetings[$internalmeetingid])) {
+            $meetingidmap[(int) $legacymeeting->id] = (int) $existingmeetings[$internalmeetingid]->id;
             continue;
         }
 
@@ -143,6 +176,7 @@ function bbbext_bnx_datahub_migrate_bnreports_meetings(int $now): void {
         ]);
 
         $meetingidmap[(int) $legacymeeting->id] = $meetingid;
+        $existingmeetings[$internalmeetingid] = (object) ['id' => $meetingid];
     }
 
     if (empty($meetingidmap)) {
@@ -166,6 +200,31 @@ function bbbext_bnx_datahub_migrate_bnreports_users(array $meetingidmap): void {
         return;
     }
 
+    // Pre-fetch every existing target attendee row keyed by meetingid so the
+    // de-duplication check below is O(1) per legacy row (OL-3.1.2).
+    $targetmeetingids = array_values(array_unique(array_map('intval', $meetingidmap)));
+    $existingbymeeting = [];
+    if (!empty($targetmeetingids)) {
+        [$insql, $inparams] = $DB->get_in_or_equal($targetmeetingids, SQL_PARAMS_NAMED, 'mid');
+        $existingrows = $DB->get_records_select(
+            'bbbext_bnx_datahub_meeting_user',
+            "meetingid {$insql}",
+            $inparams,
+            '',
+            'id, meetingid, userid, fullname, timejoin'
+        );
+        foreach ($existingrows as $row) {
+            $mid = (int) $row->meetingid;
+            $existingbymeeting[$mid] ??= ['byuserid' => [], 'byfingerprint' => []];
+            if ((int) $row->userid > 0) {
+                $existingbymeeting[$mid]['byuserid'][(int) $row->userid] = (int) $row->id;
+            } else {
+                $fingerprint = $row->fullname . '|' . (int) $row->timejoin;
+                $existingbymeeting[$mid]['byfingerprint'][$fingerprint] = (int) $row->id;
+            }
+        }
+    }
+
     foreach ($legacyusers as $legacyuser) {
         $legacymeetingid = (int) ($legacyuser->meetingid ?? 0);
         if (empty($meetingidmap[$legacymeetingid])) {
@@ -174,20 +233,15 @@ function bbbext_bnx_datahub_migrate_bnreports_users(array $meetingidmap): void {
 
         $meetingid = (int) $meetingidmap[$legacymeetingid];
         $userid = isset($legacyuser->userid) ? (int) $legacyuser->userid : null;
-        if ($userid > 0) {
-            $existing = $DB->get_record('bbbext_bnx_datahub_meeting_user', [
-                'meetingid' => $meetingid,
-                'userid' => $userid,
-            ], 'id');
+        $bucket = $existingbymeeting[$meetingid] ?? ['byuserid' => [], 'byfingerprint' => []];
+        if ($userid !== null && $userid > 0) {
+            $exists = isset($bucket['byuserid'][$userid]);
         } else {
-            $existing = $DB->get_record('bbbext_bnx_datahub_meeting_user', [
-                'meetingid' => $meetingid,
-                'fullname' => (string) ($legacyuser->fullname ?? ''),
-                'timejoin' => (int) ($legacyuser->timejoin ?? 0),
-            ], 'id');
+            $fingerprint = (string) ($legacyuser->fullname ?? '') . '|' . (int) ($legacyuser->timejoin ?? 0);
+            $exists = isset($bucket['byfingerprint'][$fingerprint]);
         }
 
-        if ($existing) {
+        if ($exists) {
             continue;
         }
 
@@ -214,23 +268,42 @@ function bbbext_bnx_datahub_migrate_bnreports_users(array $meetingidmap): void {
 /**
  * Ensure a BNX base record exists for the supplied module id.
  *
- * @param int $moduleid
- * @param int $now
+ * Accepts an optional pre-fetched cache (keyed by bigbluebuttonbnid) so callers
+ * inside loops avoid issuing per-row SELECTs against bbbext_bnx (OL-3.1.2). Newly
+ * inserted records are written back into the cache so subsequent calls with the
+ * same module id are also served without a query.
+ *
+ * @param int             $moduleid
+ * @param int             $now
+ * @param array<int,object>|null $cache Optional cache keyed by bigbluebuttonbnid.
  * @return int|null
  */
-function bbbext_bnx_datahub_ensure_bnx_record(int $moduleid, int $now): ?int {
+function bbbext_bnx_datahub_ensure_bnx_record(int $moduleid, int $now, ?array &$cache = null): ?int {
     global $DB;
+
+    if ($cache !== null && isset($cache[$moduleid]) && isset($cache[$moduleid]->id)) {
+        return (int) $cache[$moduleid]->id;
+    }
 
     $record = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $moduleid], 'id');
     if ($record && isset($record->id)) {
+        if ($cache !== null) {
+            $cache[$moduleid] = $record;
+        }
         return (int) $record->id;
     }
 
-    return (int) $DB->insert_record('bbbext_bnx', (object) [
+    $newid = (int) $DB->insert_record('bbbext_bnx', (object) [
         'bigbluebuttonbnid' => $moduleid,
         'timecreated' => $now,
         'timemodified' => $now,
     ]);
+
+    if ($cache !== null) {
+        $cache[$moduleid] = (object) ['id' => $newid, 'bigbluebuttonbnid' => $moduleid];
+    }
+
+    return $newid;
 }
 
 /**
