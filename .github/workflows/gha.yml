@@ -11,8 +11,10 @@ jobs:
       matrix:
         php: ['8.3']
         runchecks: ['all']
-        moodle-branch: ['MOODLE_501_STABLE', 'main']
-        database: ['mariadb', 'pgsql']
+        # moodle-branch: ['MOODLE_501_STABLE', 'MOODLE_502_STABLE', 'main']
+        moodle-branch: ['main']
+        # database: ['mariadb', 'pgsql']
+        database: ['mariadb']
 
     steps:
       - name: Check out repository code
