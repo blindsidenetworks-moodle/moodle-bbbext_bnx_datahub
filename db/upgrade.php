@@ -33,16 +33,15 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
     require_once(__DIR__ . '/migration.php');
 
     if ($oldversion < 2026012202) {
-        // Ensure BigBlueButton meeting events are enabled when bnx_datahub is upgraded/enabled.
-        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
-
+        // Historical upgrade step: previously force-enabled
+        // bigbluebuttonbn_meetingevents_enabled. Removed (OL-3.2.1) - sidecar
+        // subplugins must not silently mutate their parent's settings.
         upgrade_plugin_savepoint(true, 2026012202, 'bbbext', 'bnx_datahub');
     }
 
     if ($oldversion < 2026031300) {
-        // Backfill: fix config written to wrong scope (mod_bigbluebuttonbn) in prior versions.
-        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
-
+        // Historical upgrade step: previously corrected a wrong-scope write of
+        // bigbluebuttonbn_meetingevents_enabled. Removed (OL-3.2.1).
         upgrade_plugin_savepoint(true, 2026031300, 'bbbext', 'bnx_datahub');
     }
 
@@ -51,6 +50,13 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
         bbbext_bnx_datahub_migrate_bnreports_data();
 
         upgrade_plugin_savepoint(true, 2026031301, 'bbbext', 'bnx_datahub');
+    }
+
+    if ($oldversion < 2026060200) {
+        // Release 1.0.2: no schema change. The OL-3.2.1 remediation removed the
+        // historical cross-plugin set_config writes that were performed in this
+        // upgrade path on previous savepoints.
+        upgrade_plugin_savepoint(true, 2026060200, 'bbbext', 'bnx_datahub');
     }
 
     return true;
