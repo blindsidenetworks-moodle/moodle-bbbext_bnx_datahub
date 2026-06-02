@@ -204,12 +204,9 @@ class logger {
             }
         }
 
-        // Batch insert all new attendee rows in a single round-trip.
-        if (!empty($newrecords)) {
-            $newids = $DB->insert_records('bbbext_bnx_datahub_meeting_user', $newrecords);
-            foreach ($newids as $newid) {
-                $ids[] = (int) $newid;
-            }
+        // Insert new attendee rows, collecting each new ID.
+        foreach ($newrecords as $newrecord) {
+            $ids[] = (int) $DB->insert_record('bbbext_bnx_datahub_meeting_user', $newrecord);
         }
 
         return ['ids' => $ids, 'skipped' => $skipped];
