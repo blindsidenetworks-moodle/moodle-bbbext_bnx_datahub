@@ -273,9 +273,9 @@ function bbbext_bnx_datahub_migrate_bnreports_users(array $meetingidmap): void {
  * inserted records are written back into the cache so subsequent calls with the
  * same module id are also served without a query.
  *
- * @param int             $moduleid
- * @param int             $now
- * @param array<int,object>|null $cache Optional cache keyed by bigbluebuttonbnid.
+ * @param int    $moduleid
+ * @param int    $now
+ * @param array|null $cache Optional cache keyed by bigbluebuttonbnid.
  * @return int|null
  */
 function bbbext_bnx_datahub_ensure_bnx_record(int $moduleid, int $now, ?array $cache = null): ?int {
