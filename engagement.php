@@ -37,8 +37,9 @@ if ($cmid) {
     $PAGE->set_context($context);
     $PAGE->set_cm($cm);
     $PAGE->set_url(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/engagement.php', ['cmid' => $cmid]));
-    $PAGE->set_title(format_string($bigbluebuttonbn->name) . ' - ' . get_string('reportengagement', 'bbbext_bnx_datahub'));
-    $PAGE->set_heading(format_string($course->fullname));
+    $PAGE->set_title(format_string($bigbluebuttonbn->name, true, ['context' => $context])
+        . ' - ' . get_string('reportengagement', 'bbbext_bnx_datahub'));
+    $PAGE->set_heading(format_string($course->fullname, true, ['context' => $context]));
 } else {
     // Site-wide report.
     require_login();
@@ -70,7 +71,10 @@ echo $OUTPUT->header();
 
 // Output the hidden span for nav label override.
 if ($cmid) {
-    echo '<span class="bbbext-bnx-navlabel" data-label="' . s($navlabel) . '" hidden></span>';
+    echo html_writer::span('', 'bbbext-bnx-navlabel', [
+        'data-label' => $navlabel,
+        'hidden' => 'hidden',
+    ]);
 }
 
 echo $report->output();
