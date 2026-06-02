@@ -32,6 +32,10 @@ This plugin extends the BigBlueButton activity module by capturing real-time mee
 3. Ensure `bbbext_bnx` is enabled
 4. Enable meeting events: Site Administration > Plugins > Activity modules > BigBlueButton > General settings > `meetingevents_enabled`
 
+## Sidecar contract
+
+As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict sidecar contract: it MUST NOT write to settings owned by other components. In particular it never enables `bigbluebuttonbn_meetingevents_enabled` from its install, upgrade, observer or `on_enable` code paths. Operators are responsible for enabling that flag on the parent plugin during installation. The plugin surfaces the dependency via a status check at *Site administration > Server > Status* (`bbbext_bnx_datahub_meetingevents_enabled`), and conformance tests in `tests/meetingevents_enablement_test.php` pin the contract.
+
 ## Capabilities
 
 | Capability | Description | Default Roles |
