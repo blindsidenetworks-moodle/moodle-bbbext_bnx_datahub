@@ -65,6 +65,19 @@ class provider implements
             'rawdata' => 'privacy:metadata:rawdata',
         ], 'privacy:metadata:bbbext_bnx_datahub_meeting_user');
 
+        // The meeting table stores webhook payloads which can include user-identifying
+        // data (moderator names, attendee details inside metadata/rawdata). Declare it
+        // so it is discoverable by GDPR export/delete requests (OL-3.2.3).
+        $collection->add_database_table('bbbext_bnx_datahub_meeting', [
+            'meetingname' => 'privacy:metadata:meeting:meetingname',
+            'externalmeetingid' => 'privacy:metadata:meeting:externalmeetingid',
+            'internalmeetingid' => 'privacy:metadata:meeting:internalmeetingid',
+            'metadata' => 'privacy:metadata:meeting:metadata',
+            'rawdata' => 'privacy:metadata:meeting:rawdata',
+            'timestart' => 'privacy:metadata:meeting:timestart',
+            'timeend' => 'privacy:metadata:meeting:timeend',
+        ], 'privacy:metadata:bbbext_bnx_datahub_meeting');
+
         return $collection;
     }
 
@@ -112,7 +125,13 @@ class provider implements
                 continue;
             }
 
-            $sql = "SELECT mu.*, mtg.meetingname, mtg.externalmeetingid
+            $sql = "SELECT mu.*,
+                           mtg.meetingname,
+                           mtg.externalmeetingid,
+                           mtg.internalmeetingid,
+                           mtg.timestart AS meeting_timestart,
+                           mtg.timeend AS meeting_timeend,
+                           mtg.metadata AS meeting_metadata
                       FROM {bbbext_bnx_datahub_meeting_user} mu
                       JOIN {bbbext_bnx_datahub_meeting} mtg ON mtg.id = mu.meetingid
                       JOIN {bbbext_bnx} bnx ON bnx.id = mtg.bnxid
@@ -137,6 +156,10 @@ class provider implements
                 writer::with_context($context)->export_data($exportpath, (object)[
                     'meetingname' => $record->meetingname,
                     'externalmeetingid' => $record->externalmeetingid,
+                    'internalmeetingid' => $record->internalmeetingid,
+                    'meeting_timestart' => transform::datetime($record->meeting_timestart),
+                    'meeting_timeend' => transform::datetime($record->meeting_timeend),
+                    'meeting_metadata' => $record->meeting_metadata,
                     'fullname' => $record->fullname,
                     'role' => $record->role,
                     'timejoin' => transform::datetime($record->timejoin),
@@ -166,25 +189,29 @@ class provider implements
             return;
         }
 
-        $sql = "SELECT mu.id
-                  FROM {bbbext_bnx_datahub_meeting_user} mu
-                  JOIN {bbbext_bnx_datahub_meeting} mtg ON mtg.id = mu.meetingid
-                  JOIN {bbbext_bnx} bnx ON bnx.id = mtg.bnxid
-                  JOIN {bigbluebuttonbn} bbb ON bbb.id = bnx.bigbluebuttonbnid
-                  JOIN {course_modules} cm ON cm.instance = bbb.id
-                  JOIN {modules} m ON m.id = cm.module AND m.name = :modname
-                 WHERE cm.id = :cmid";
+        // Resolve the plugin-owned meeting rows tied to this module context, then
+        // delete the dependent attendee rows (meeting_user) followed by the meeting
+        // rows themselves so both plugin-owned tables are cleared (OL-3.2.3).
+        $meetingsql = "SELECT mtg.id
+                         FROM {bbbext_bnx_datahub_meeting} mtg
+                         JOIN {bbbext_bnx} bnx ON bnx.id = mtg.bnxid
+                         JOIN {bigbluebuttonbn} bbb ON bbb.id = bnx.bigbluebuttonbnid
+                         JOIN {course_modules} cm ON cm.instance = bbb.id
+                         JOIN {modules} m ON m.id = cm.module AND m.name = :modname
+                        WHERE cm.id = :cmid";
 
         $params = [
             'modname' => 'bigbluebuttonbn',
             'cmid' => $context->instanceid,
         ];
 
-        $records = $DB->get_records_sql($sql, $params);
-        if (!empty($records)) {
-            $ids = array_keys($records);
-            $DB->delete_records_list('bbbext_bnx_datahub_meeting_user', 'id', $ids);
+        $meetingids = array_keys($DB->get_records_sql($meetingsql, $params));
+        if (empty($meetingids)) {
+            return;
         }
+
+        $DB->delete_records_list('bbbext_bnx_datahub_meeting_user', 'meetingid', $meetingids);
+        $DB->delete_records_list('bbbext_bnx_datahub_meeting', 'id', $meetingids);
     }
 
     /**
