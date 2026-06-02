@@ -17,94 +17,48 @@
 namespace bbbext_bnx_datahub;
 
 /**
- * Conformance tests for meeting events auto-enable behaviour.
+ * Sidecar contract conformance tests.
+ *
+ * After OL-3.2.1 the bnx_datahub subplugin must NEVER mutate the parent
+ * mod_bigbluebuttonbn `bigbluebuttonbn_meetingevents_enabled` setting through
+ * its install / upgrade / observer / on_enable code paths. These tests pin
+ * that contract so a regression cannot silently re-introduce the cross-plugin
+ * write.
  *
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 final class meetingevents_enablement_test extends \advanced_testcase {
+
     /**
-     * Install must enable meeting events.
+     * Install must NOT touch the parent meeting events setting.
      *
      * @covers ::xmldb_bbbext_bnx_datahub_install
-     * @return void
      */
-    public function test_install_enables_meetingevents(): void {
+    public function test_install_does_not_touch_meetingevents(): void {
         global $CFG;
 
         $this->resetAfterTest(true);
 
         set_config('bigbluebuttonbn_meetingevents_enabled', 0);
-        $this->assertSame(0, (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'));
 
         require_once($CFG->dirroot . '/mod/bigbluebuttonbn/extension/bnx_datahub/db/install.php');
         xmldb_bbbext_bnx_datahub_install();
 
-        $this->assertSame(1, (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'));
+        $this->assertSame(
+            0,
+            (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'),
+            'bbbext_bnx_datahub install must not enable bigbluebuttonbn_meetingevents_enabled.'
+        );
     }
 
     /**
-     * Enabling bnx_datahub must enable meeting events.
-     *
-     * @covers \bbbext_bnx_datahub\observer::config_log_created
-     * @return void
-     */
-    public function test_enable_event_enables_meetingevents(): void {
-        $this->resetAfterTest(true);
-
-        set_config('bigbluebuttonbn_meetingevents_enabled', 0);
-        $this->assertSame(0, (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'));
-
-        $event = \core\event\config_log_created::create([
-            'context' => \context_system::instance(),
-            'other' => [
-                'name' => 'disabled',
-                'plugin' => 'bbbext_bnx_datahub',
-                'oldvalue' => '1',
-                'value' => '0',
-            ],
-        ]);
-
-        observer::config_log_created($event);
-
-        $this->assertSame(1, (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'));
-    }
-
-    /**
-     * Disabling bnx_datahub must NOT touch the meeting events setting.
-     *
-     * @covers \bbbext_bnx_datahub\observer::config_log_created
-     * @return void
-     */
-    public function test_disable_event_does_not_change_meetingevents(): void {
-        $this->resetAfterTest(true);
-
-        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
-
-        $event = \core\event\config_log_created::create([
-            'context' => \context_system::instance(),
-            'other' => [
-                'name' => 'disabled',
-                'plugin' => 'bbbext_bnx_datahub',
-                'oldvalue' => '0',
-                'value' => '1',
-            ],
-        ]);
-
-        observer::config_log_created($event);
-
-        $this->assertSame(1, (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'));
-    }
-
-    /**
-     * Upgrade must backfill meeting events enablement.
+     * Upgrade must NOT touch the parent meeting events setting on any savepoint.
      *
      * @covers ::xmldb_bbbext_bnx_datahub_upgrade
-     * @return void
      */
-    public function test_upgrade_enables_meetingevents(): void {
+    public function test_upgrade_does_not_touch_meetingevents(): void {
         global $CFG;
 
         $this->resetAfterTest(true);
@@ -116,6 +70,63 @@ final class meetingevents_enablement_test extends \advanced_testcase {
         require_once($CFG->dirroot . '/mod/bigbluebuttonbn/extension/bnx_datahub/db/upgrade.php');
         xmldb_bbbext_bnx_datahub_upgrade(2026012201);
 
-        $this->assertSame(1, (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'));
+        $this->assertSame(
+            0,
+            (int) get_config(null, 'bigbluebuttonbn_meetingevents_enabled'),
+            'bbbext_bnx_datahub upgrade must not enable bigbluebuttonbn_meetingevents_enabled.'
+        );
+    }
+
+    /**
+     * The cross-plugin observer and on_enable hook must no longer be present.
+     *
+     * @covers \bbbext_bnx_datahub\observer
+     */
+    public function test_cross_plugin_hooks_are_removed(): void {
+        $this->assertFileDoesNotExist(
+            __DIR__ . '/../classes/observer.php',
+            'observer.php (config_log_created auto-enable) must be removed (OL-3.2.1).'
+        );
+        $this->assertFileDoesNotExist(
+            __DIR__ . '/../classes/plugininfo_callbacks.php',
+            'plugininfo_callbacks::on_enable must be removed (CC-1).'
+        );
+        $this->assertFileDoesNotExist(
+            __DIR__ . '/../db/events.php',
+            'db/events.php registering the cross-plugin observer must be removed.'
+        );
+    }
+
+    /**
+     * The status check surfaces the unmet parent-setting prerequisite.
+     *
+     * @covers \bbbext_bnx_datahub\check\meetingevents_enabled
+     */
+    public function test_status_check_warns_when_parent_setting_missing(): void {
+        $this->resetAfterTest(true);
+
+        set_config('bigbluebuttonbn_meetingevents_enabled', 0);
+        set_config('meetingevents_enabled', 0, 'mod_bigbluebuttonbn');
+
+        $check = new \bbbext_bnx_datahub\check\meetingevents_enabled();
+        $result = $check->get_result();
+
+        $this->assertSame(\core\check\result::WARNING, $result->get_status());
+    }
+
+    /**
+     * The status check is OK when the parent setting is enabled.
+     *
+     * @covers \bbbext_bnx_datahub\check\meetingevents_enabled
+     */
+    public function test_status_check_ok_when_parent_setting_enabled(): void {
+        $this->resetAfterTest(true);
+
+        set_config('bigbluebuttonbn_meetingevents_enabled', 1);
+
+        $check = new \bbbext_bnx_datahub\check\meetingevents_enabled();
+        $result = $check->get_result();
+
+        $this->assertSame(\core\check\result::OK, $result->get_status());
     }
 }
