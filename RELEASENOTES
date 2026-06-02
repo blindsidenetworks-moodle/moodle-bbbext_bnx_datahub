@@ -1,0 +1,23 @@
+1.0.2 (June 2, 2026)
+- fix: Stop writing the parent bigbluebuttonbn_meetingevents_enabled setting from install, upgrade, observer, and on_enable code paths to honor the sidecar contract (OL-3.2.1, CC-1).
+- feat: Add a status check (\bbbext_bnx_datahub\check\meetingevents_enabled) registered via lib.php that surfaces the parent meeting events prerequisite on Site administration > Server > Status (OL-3.2.1).
+- fix: Declare bbbext_bnx_datahub_meeting in the privacy provider with field-level metadata, extend export_user_data() to include meeting metadata, and remove plugin-owned meeting rows in delete_data_for_all_users_in_context() (OL-3.2.3).
+- fix: Enforce report visibility via has_capability('bbbext/bnx_datahub:viewreports') on the report context, drop the optional_param fallback for the bigbluebuttonbnid filter, and resolve the bbbext_bnx alias from the meeting entity (OL-3.2.2, OL-4.1.3, OL-4.1.4).
+- fix: Replace format_text() with format_string($value, true, ['context' => ...]) across attendee, meeting, and room reportbuilder entities and the attendance / engagement system reports (OL-3.2.4, OL-4.1.5).
+- fix: Eliminate N+1 database access in webhook ingestion, privacy export / per-user delete, and the BN Reports legacy migration (OL-3.1.2).
+- fix: Replace SELECT m.* with an explicit column list in meeting_service queries (OL-4.1.6).
+- fix: Switch admin settings labels to deferred lang_string resolution (OL-3.1.5).
+- fix: Drop the unused reportbuilder date filter import and the dead-store assignment in logger::log_meeting (OL-3.1.4, OL-3.1.3).
+- chore: Replace inline HTML with html_writer::span() in attendance and engagement system reports (OL-4.1.2).
+- chore: Pin the bbbext_bnx dependency to 2026050102 / 1.1.1 (CC-4).
+- chore: Sync db/install.xml VERSION with version.php and add a 2026060200 upgrade savepoint (OL-3.1.1).
+- test: Invert the meeting events enablement conformance suite, add status-check coverage, and seed bigbluebuttonbn_meetingevents_enabled in every PHPUnit fixture that exercises BBB activity flows (CC-2).
+- test: Re-enable the previously @skipped Behat scenario for the prohibited-capability path (OL-4.1.1).
+- ci: Seed bigbluebuttonbn_meetingevents_enabled in the GitHub Actions workflow after Behat / PHPUnit init (CC-5).
+- docs: Document the sidecar contract in README and refresh .copilot/ARCHITECTURE.md (CC-3, CC-6).
+
+Deferred:
+- OL-4.1.7 (rename reserved fields role / score in bbbext_bnx_datahub_meeting_user). Deferred: Moodle 4.x+ dropped Oracle / MS SQL Server support, so the reserved-keyword conflict no longer applies on supported databases. A rename ripples through every entity, service, persistent, lang string, and Behat fixture without a security or correctness benefit. To be revisited if the schema is touched for an unrelated reason.
+
+1.0.1 (April 15, 2026)
+- chore: Initial public release of bbbext_bnx_datahub.
