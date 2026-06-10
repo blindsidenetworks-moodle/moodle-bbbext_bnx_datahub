@@ -20,6 +20,7 @@ namespace bbbext_bnx_datahub;
  * Tests for install-time migration from BN Reports.
  *
  * @covers ::bbbext_bnx_datahub_migrate_bnreports_data
+ * @covers ::bbbext_bnx_datahub_ensure_bnx_record
  * @covers ::bbbext_bnx_datahub_legacy_bnreports_table
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
@@ -159,6 +160,27 @@ final class install_migration_test extends \advanced_testcase {
             'userid' => $userid,
         ]);
         $this->assertSame(1, (int) $users);
+    }
+
+    /**
+     * Newly created BNX records should be written back to the caller cache.
+     */
+    public function test_ensure_bnx_record_updates_prefetch_cache(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $bbb = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+        $cache = [];
+
+        $bnxid = bbbext_bnx_datahub_ensure_bnx_record($bbb->id, time(), $cache);
+
+        $this->assertNotNull($bnxid);
+        $this->assertArrayHasKey($bbb->id, $cache);
+        $this->assertSame((int) $bnxid, (int) $cache[$bbb->id]->id);
+        $this->assertSame(1, $DB->count_records('bbbext_bnx', ['bigbluebuttonbnid' => $bbb->id]));
+
+        $this->assertSame((int) $bnxid, bbbext_bnx_datahub_ensure_bnx_record($bbb->id, time(), $cache));
+        $this->assertSame(1, $DB->count_records('bbbext_bnx', ['bigbluebuttonbnid' => $bbb->id]));
     }
 
     /**
