@@ -35,6 +35,9 @@ use bbbext_bnx_datahub\reportbuilder\local\entities\room;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class engagement extends system_report {
+    /** @var string Alias for the BNX bridge table join. */
+    private const BNX_ALIAS = 'bbbextbnx';
+
     /**
      * Initialise the report.
      */
@@ -80,8 +83,8 @@ class engagement extends system_report {
             "LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid"
         );
 
-        // Join bbbext_bnx to get bigbluebuttonbnid (bridge table — not owned by any entity).
-        $bnxalias = 'bnxjoin';
+        // Join bbbext_bnx to get bigbluebuttonbnid (bridge table not owned by any entity).
+        $bnxalias = self::BNX_ALIAS;
         $this->add_join("LEFT JOIN {bbbext_bnx} {$bnxalias} ON {$bnxalias}.id = {$meetingalias}.bnxid");
 
         $roomentity = new room();
