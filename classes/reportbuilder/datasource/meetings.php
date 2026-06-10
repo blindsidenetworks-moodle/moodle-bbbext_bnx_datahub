@@ -32,6 +32,9 @@ use bbbext_bnx_datahub\reportbuilder\local\entities\room;
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class meetings extends datasource {
+    /** @var string Alias for the BNX bridge table join. */
+    private const BNX_ALIAS = 'bbbextbnx';
+
     /**
      * Return the friendly name of the report source
      *
@@ -51,9 +54,10 @@ class meetings extends datasource {
         $this->add_entity($meetingentity);
 
         // Join bbbext_bnx to get bigbluebuttonbnid.
+        $bnxalias = self::BNX_ALIAS;
         $this->add_join("
-            LEFT JOIN {bbbext_bnx} bnx
-                ON bnx.id = {$meetingalias}.bnxid");
+            LEFT JOIN {bbbext_bnx} {$bnxalias}
+                ON {$bnxalias}.id = {$meetingalias}.bnxid");
 
         // Join the room (bigbluebuttonbn) entity.
         $roomentity = new room();
@@ -61,7 +65,7 @@ class meetings extends datasource {
         $this->add_entity($roomentity);
         $this->add_join("
             LEFT JOIN {bigbluebuttonbn} {$roomalias}
-                ON {$roomalias}.id = bnx.bigbluebuttonbnid");
+                ON {$roomalias}.id = {$bnxalias}.bigbluebuttonbnid");
 
         // Join the course entity for rooms.
         $courseentity = new course();
