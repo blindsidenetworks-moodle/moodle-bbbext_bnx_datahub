@@ -30,6 +30,8 @@
  * @return bool Whether the upgrade was successful.
  */
 function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
+    global $DB;
+
     require_once(__DIR__ . '/migration.php');
 
     if ($oldversion < 2026012202) {
@@ -57,6 +59,23 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
         // historical cross-plugin set_config writes that were performed in this
         // upgrade path on previous savepoints.
         upgrade_plugin_savepoint(true, 2026060200, 'bbbext', 'bnx_datahub');
+    }
+
+    if ($oldversion < 2026061000) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('bbbext_bnx_datahub_meeting_user');
+
+        $field = new xmldb_field('role', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->rename_field($table, $field, 'attendeerole');
+        }
+
+        $field = new xmldb_field('score', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->rename_field($table, $field, 'attendeescore');
+        }
+
+        upgrade_plugin_savepoint(true, 2026061000, 'bbbext', 'bnx_datahub');
     }
 
     return true;

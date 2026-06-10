@@ -17,7 +17,7 @@
 - docs: Document the sidecar contract in README and refresh .copilot/ARCHITECTURE.md to remove references to the legacy sidecar_state_manager (CC-3, CC-6).
 
 Deferred:
-- OL-4.1.7 (rename reserved fields role / score in bbbext_bnx_datahub_meeting_user). Deferred because Moodle 4.x+ no longer supports Oracle / MS SQL Server, and a rename ripples through every entity, service, persistent, lang string, and Behat fixture without a security or correctness benefit on the supported databases. To be revisited if the schema is touched for an unrelated reason.
+- OL-4.1.7 (rename reserved fields role / score in bbbext_bnx_datahub_meeting_user). Implemented with an XMLDB upgrade step that renames the target columns to attendeerole / attendeescore while preserving existing data.
 
 1.0.1 (April 15, 2026)
 - chore: Initial public release of bbbext_bnx_datahub.

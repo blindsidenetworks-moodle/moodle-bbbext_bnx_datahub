@@ -178,10 +178,11 @@ class logger {
             $record->meetingid = $meetingid;
             $record->userid = $userid;
             $record->fullname = fullname($user);
-            $record->role = ($data->moderator ?? '') === 'true' ? 'moderator' : 'viewer';
+            $record->attendeerole = ($data->moderator ?? '') === 'true' ? 'moderator' : 'viewer';
             $record->timejoin = strtotime($data->joins[0] ?? '');
             $record->timeleave = strtotime($data->leaves[0] ?? '');
             $record->elapsedtime = $data->duration ?? 0;
+            $record->attendeescore = $data->score ?? 0;
             $record->engchats = $data->engagement->chats ?? 0;
             $record->engtalks = $data->engagement->talks ?? 0;
             $record->engraisehand = $data->engagement->raisehand ?? 0;
