@@ -75,8 +75,8 @@ final class privacy_provider_test extends provider_testcase {
         $meeting->timestart = time() - 3600;
         $meeting->timeend = time();
         $meeting->duration = 3600;
-        $meeting->metadata = '{}';
-        $meeting->rawdata = '{}';
+        $meeting->metadata = json_encode(['meeting' => 'metadata', 'moderator' => 'Test User']);
+        $meeting->rawdata = json_encode(['meeting' => 'rawdata', 'attendees' => ['Test User']]);
         $meeting->id = $DB->insert_record('bbbext_bnx_datahub_meeting', $meeting);
 
         // Create meeting user record.
@@ -136,6 +136,11 @@ final class privacy_provider_test extends provider_testcase {
         $this->assertArrayHasKey('engpollvotes', $privacyfields);
         $this->assertArrayHasKey('engtalktime', $privacyfields);
         $this->assertArrayHasKey('rawdata', $privacyfields);
+
+        $meetingtable = $tables['bbbext_bnx_datahub_meeting'];
+        $meetingfields = $meetingtable->get_privacy_fields();
+        $this->assertArrayHasKey('metadata', $meetingfields);
+        $this->assertArrayHasKey('rawdata', $meetingfields);
     }
 
     /**
@@ -195,6 +200,15 @@ final class privacy_provider_test extends provider_testcase {
 
         $writer = writer::with_context($context);
         $this->assertTrue($writer->has_any_data());
+
+        $data = $writer->get_data([
+            get_string('pluginname', 'bbbext_bnx_datahub'),
+            'Privacy Test Meeting',
+        ]);
+
+        $this->assertSame('Privacy Test Meeting', $data->meetingname);
+        $this->assertSame(json_encode(['meeting' => 'metadata', 'moderator' => 'Test User']), $data->meeting_metadata);
+        $this->assertSame(json_encode(['meeting' => 'rawdata', 'attendees' => ['Test User']]), $data->meeting_rawdata);
     }
 
     /**
@@ -236,6 +250,7 @@ final class privacy_provider_test extends provider_testcase {
 
         // Verify all records are deleted.
         $this->assertEquals(0, $DB->count_records('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meeting->id]));
+        $this->assertEquals(0, $DB->count_records('bbbext_bnx_datahub_meeting', ['id' => $meeting->id]));
     }
 
     /**
@@ -286,6 +301,7 @@ final class privacy_provider_test extends provider_testcase {
             'meetingid' => $meeting->id,
             'userid' => $user2->id,
         ]));
+        $this->assertEquals(1, $DB->count_records('bbbext_bnx_datahub_meeting', ['id' => $meeting->id]));
     }
 
     /**
@@ -336,5 +352,6 @@ final class privacy_provider_test extends provider_testcase {
             'meetingid' => $meeting->id,
             'userid' => $user3->id,
         ]));
+        $this->assertEquals(1, $DB->count_records('bbbext_bnx_datahub_meeting', ['id' => $meeting->id]));
     }
 }
