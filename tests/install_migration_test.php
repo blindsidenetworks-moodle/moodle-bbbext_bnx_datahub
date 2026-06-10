@@ -97,7 +97,7 @@ final class install_migration_test extends \advanced_testcase {
 
         $meetinguser = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meeting->id], '*', MUST_EXIST);
         $this->assertSame('Legacy User', (string) $meetinguser->fullname);
-        $this->assertSame('viewer', (string) $meetinguser->role);
+        $this->assertSame('viewer', (string) $meetinguser->attendeerole);
 
         $this->assertSame('enabled', get_config('bbbext_bnx_datahub', 'sample_legacy_flag'));
         $this->assertSame('1', get_config('bbbext_bnreports', 'disabled'));

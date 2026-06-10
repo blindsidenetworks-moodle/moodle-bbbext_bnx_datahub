@@ -105,11 +105,11 @@ class behat_bbbext_bnx_datahub extends behat_base {
                 $attendee->fullname = $row['fullname'] ?? 'Unknown User';
             }
 
-            $attendee->role = $row['role'] ?? 'viewer';
+            $attendee->attendeerole = $row['role'] ?? $row['attendeerole'] ?? 'viewer';
             $attendee->timejoin = isset($row['timejoin']) ? strtotime($row['timejoin']) : $meeting->timestart;
             $attendee->timeleave = isset($row['timeleave']) ? strtotime($row['timeleave']) : $meeting->timeend;
             $attendee->elapsedtime = $attendee->timeleave - $attendee->timejoin;
-            $attendee->score = $row['score'] ?? 0;
+            $attendee->attendeescore = $row['score'] ?? $row['attendeescore'] ?? 0;
             $attendee->engchats = $row['engchats'] ?? 0;
             $attendee->engtalks = $row['engtalks'] ?? 0;
             $attendee->engraisehand = $row['engraisehand'] ?? 0;

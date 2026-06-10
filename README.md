@@ -86,7 +86,7 @@ As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict s
 
 ### Attendee Data
 - User ID and display name
-- Role (moderator/viewer)
+- Attendee role (`attendeerole`, moderator/viewer)
 - Join and leave timestamps
 - Elapsed time in meeting
 - **Engagement Metrics:**
@@ -96,7 +96,7 @@ As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict s
   - `engraisehand` - Number of hand raises
   - `engemojis` - Number of emoji reactions
   - `engpollvotes` - Number of poll responses
-  - `score` - Calculated engagement score
+  - `attendeescore` - Calculated engagement score
 
 ## Testing
 

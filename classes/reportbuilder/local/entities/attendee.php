@@ -109,7 +109,7 @@ class attendee extends base {
         ))
             ->add_joins($this->get_joins())
             ->set_type(column::TYPE_LONGTEXT)
-            ->add_field("{$attendeealias}.role", 'role')
+            ->add_field("{$attendeealias}.attendeerole", 'role')
             ->set_is_sortable(true)
             ->add_callback(static function (?string $role, stdClass $attendee): string {
                 if ($role === null) {
@@ -247,7 +247,7 @@ class attendee extends base {
             'role',
             new lang_string('attendee:role', 'bbbext_bnx_datahub'),
             $this->get_entity_name(),
-            $DB->sql_cast_to_char("{$attendeealias}.role")
+            $DB->sql_cast_to_char("{$attendeealias}.attendeerole")
         ))
             ->add_joins($this->get_joins())
             ->set_options_callback(function () {

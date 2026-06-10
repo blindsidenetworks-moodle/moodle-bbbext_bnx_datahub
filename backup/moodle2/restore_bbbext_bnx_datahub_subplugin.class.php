@@ -114,11 +114,11 @@ class restore_bbbext_bnx_datahub_subplugin extends restore_subplugin {
         $record->meetingid = $newmeetingid;
         $record->userid = $newuserid;
         $record->fullname = $data->fullname;
-        $record->role = $data->role;
+        $record->attendeerole = $data->attendeerole ?? $data->role ?? 'viewer';
         $record->timejoin = $data->timejoin;
         $record->timeleave = $data->timeleave;
         $record->elapsedtime = $data->elapsedtime;
-        $record->score = $data->score;
+        $record->attendeescore = $data->attendeescore ?? $data->score ?? 0;
         $record->engchats = $data->engchats;
         $record->engtalks = $data->engtalks;
         $record->engraisehand = $data->engraisehand;

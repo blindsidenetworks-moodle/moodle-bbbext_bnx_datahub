@@ -221,7 +221,7 @@ final class logger_test extends advanced_testcase {
         $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid, 'userid' => $user->id]);
         $this->assertNotFalse($record);
         $this->assertEquals($user->id, $record->userid);
-        $this->assertEquals('viewer', $record->role);
+        $this->assertEquals('viewer', $record->attendeerole);
         $this->assertEquals(10, $record->engchats);
         $this->assertEquals(5, $record->engtalks);
         $this->assertEquals(2, $record->engraisehand);
@@ -251,7 +251,7 @@ final class logger_test extends advanced_testcase {
         logger::log_meeting_user($meetingid, $attendeedata);
 
         $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $meetingid, 'userid' => $user->id]);
-        $this->assertEquals('moderator', $record->role);
+        $this->assertEquals('moderator', $record->attendeerole);
     }
 
     /**
