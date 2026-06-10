@@ -103,15 +103,10 @@ class engagement extends system_report {
     /**
      * Validates access to view this report.
      *
-     * Access is enforced by the entry scripts (`attendance.php` / `engagement.php`)
-     * via require_login + require_capability before the report is instantiated.
-     * Keep this permissive so isolated report unit tests can construct instances
-     * without full page/bootstrap permission wiring.
-     *
      * @return bool
      */
     protected function can_view(): bool {
-        return true;
+        return has_capability('bbbext/bnx_datahub:viewreports', $this->get_context());
     }
 
     /**

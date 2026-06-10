@@ -17,8 +17,10 @@
 namespace bbbext_bnx_datahub\reportbuilder\local\systemreports;
 
 use advanced_testcase;
+use context_course;
 use context_module;
 use context_system;
+use core_reportbuilder\exception\report_access_exception;
 
 /**
  * Tests for the engagement system report.
@@ -37,6 +39,7 @@ final class engagement_report_test extends advanced_testcase {
         $this->resetAfterTest();
         // Sidecar-contract bootstrap (CC-2).
         set_config('bigbluebuttonbn_meetingevents_enabled', 1);
+        $this->setAdminUser();
     }
 
     /**
@@ -142,20 +145,36 @@ final class engagement_report_test extends advanced_testcase {
     }
 
     /**
-     * Test that can_view returns true.
+     * Test that a user with the report capability can view the report.
      */
-    public function test_can_view(): void {
+    public function test_can_view_with_capability(): void {
+        [$context, $user] = $this->create_report_context_and_user(true);
+        $this->setUser($user);
+
         $report = \core_reportbuilder\system_report_factory::create(
             engagement::class,
-            context_system::instance()
+            $context
         );
 
-        // Use reflection to test protected can_view method.
         $reflection = new \ReflectionClass($report);
         $method = $reflection->getMethod('can_view');
         $method->setAccessible(true);
 
         $this->assertTrue($method->invoke($report));
+    }
+
+    /**
+     * Test that a user without the report capability cannot view the report.
+     */
+    public function test_can_view_without_capability(): void {
+        [$context, $user] = $this->create_report_context_and_user(false);
+        $this->setUser($user);
+
+        $this->expectException(report_access_exception::class);
+        \core_reportbuilder\system_report_factory::create(
+            engagement::class,
+            $context
+        );
     }
 
     /**
@@ -208,5 +227,29 @@ final class engagement_report_test extends advanced_testcase {
         foreach ($engagementmetrics as $metric) {
             $this->assertContains($metric, $columnidentifiers, "Missing engagement metric: {$metric}");
         }
+    }
+
+    /**
+     * Create a module context and test user for report access tests.
+     *
+     * @param bool $allow Whether to grant the DataHub reports capability.
+     * @return array{0: context_module, 1: \stdClass}
+     */
+    private function create_report_context_and_user(bool $allow): array {
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $bbb = $generator->create_module('bigbluebuttonbn', ['course' => $course->id, 'name' => 'Test BBB']);
+        $cm = get_coursemodule_from_instance('bigbluebuttonbn', $bbb->id, $course->id, false, MUST_EXIST);
+        $context = context_module::instance($cm->id);
+        $user = $generator->create_user();
+
+        if ($allow) {
+            $coursecontext = context_course::instance($course->id);
+            $roleid = create_role('DataHub report viewer', 'datahubreportviewer', 'DataHub report viewer');
+            assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $roleid, $coursecontext->id);
+            role_assign($roleid, $user->id, $coursecontext->id);
+        }
+
+        return [$context, $user];
     }
 }
