@@ -144,6 +144,7 @@ class provider implements
                        mtg.timestart AS meeting_timestart,
                        mtg.timeend AS meeting_timeend,
                        mtg.metadata AS meeting_metadata,
+                       mtg.rawdata AS meeting_rawdata,
                        cm.id AS cmid
                   FROM {bbbext_bnx_datahub_meeting_user} mu
                   JOIN {bbbext_bnx_datahub_meeting} mtg ON mtg.id = mu.meetingid
@@ -175,6 +176,7 @@ class provider implements
                 'meeting_timestart' => transform::datetime($record->meeting_timestart),
                 'meeting_timeend' => transform::datetime($record->meeting_timeend),
                 'meeting_metadata' => $record->meeting_metadata,
+                'meeting_rawdata' => $record->meeting_rawdata,
                 'fullname' => $record->fullname,
                 'role' => $record->role,
                 'timejoin' => transform::datetime($record->timejoin),
@@ -268,6 +270,9 @@ class provider implements
 
         $records = $DB->get_records_sql($sql, $params);
         if (!empty($records)) {
+            // Meeting rows are shared by all attendees. Per-user erasure removes
+            // the user's attendee rows while retaining the meeting payload for
+            // remaining attendees and reporting integrity (OL-3.2.3).
             $ids = array_keys($records);
             $DB->delete_records_list('bbbext_bnx_datahub_meeting_user', 'id', $ids);
         }
@@ -338,6 +343,8 @@ class provider implements
 
         $records = $DB->get_records_sql($sql, $params);
         if (!empty($records)) {
+            // Meeting rows are shared by all attendees. Multi-user erasure removes
+            // attendee rows only; context-wide erasure removes the meeting rows.
             $ids = array_keys($records);
             $DB->delete_records_list('bbbext_bnx_datahub_meeting_user', 'id', $ids);
         }
