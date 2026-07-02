@@ -1,10 +1,10 @@
 1.1-beta.2 (July 2, 2026)
 - refactor: Stop running the heavy legacy BN Reports data migration from db/install.php on a fresh install (it never has legacy data to backfill); the full migration now runs only from the db/upgrade.php backfill savepoint for sites upgrading from before that step. db/install.php retains only the cheap bbbext_bnx_datahub_disable_if_bnreports_present() conflict guard (OL2-4.1.1).
-- fix: Never mutate the sibling bbbext_bnreports configuration during migration. db/migration.php now (a) copies only an explicit allow-list of settings keys (bbbext_bnx_datahub_migratable_setting_keys) into DataHub's own namespace and (b) replaces the previous cross-plugin disable with bbbext_bnx_datahub_disable_if_bnreports_present(), which self-disables DataHub (writing only bbbext_bnx_datahub/disabled) whenever the legacy sidecar is still installed and enabled. Registered a new status check \bbbext_bnx_datahub\check\bnreports_conflict that surfaces the conflict and points administrators at the Plugins overview page to resolve it (OL2-3.2.1).
+- fix: Never mutate the sibling bbbext_bnreports configuration during migration. db/migration.php now (a) copies only an explicit allow-list of settings keys (bbbext_bnx_datahub_migratable_setting_keys) into DataHub's own namespace and (b) replaces the previous cross-plugin disable with bbbext_bnx_datahub_disable_if_bnreports_present(), which self-disables DataHub (writing only bbbext_bnx_datahub/disabled) whenever the legacy sidecar is still installed and enabled. The parent bbbext enable/disable flow now also blocks manual re-enabling of DataHub while BN Reports remains enabled, auto-disables DataHub again if BN Reports is re-enabled later, and surfaces the conflict via both the manage-extensions page and the \bbbext_bnx_datahub\check\bnreports_conflict status check (OL2-3.2.1).
 - fix: Convert the DataHub navigation addon from navigation_override_addon to navigation_append_addon (append_settings_navigation), since DataHub only adds its own attendance / engagement report nodes and never replaces the parent module navigation. Appending instead of overriding stops DataHub from consuming the single override slot, so other bbbext subplugins' navigation contributions are preserved and the mod_bigbluebuttonbn subplugins Behat scenarios pass. The completion-validate node is no longer added here because the parent module already provides it and appending it would duplicate the link. Before appending, the pre-existing module settings nodes are forced into the "more" menu so the two report links remain the first secondary-navigation tabs shown, matching the previous override behaviour (OL2-3.1.1).
 - fix: Regenerate db/install.xml in canonical XMLDB editor form (add the xmlns:xsi / xsi:noNamespaceSchemaLocation root attributes and SEQUENCE="false" on the bnxid and meetingid foreign-key fields) and drop the redundant standalone meetingid index that duplicated the meetingid_fk foreign key, so core\db\plugin_checks_test passes for bbbext_bnx_datahub (OL2-3.1.1).
 
-1.0.2 (June 2, 2026)
+1.1-beta.1 (June 10, 2026)
 - fix: Stop writing the parent bigbluebuttonbn_meetingevents_enabled setting from install, upgrade, observer, and on_enable code paths to honor the sidecar contract (OL-3.2.1, CC-1).
 - feat: Add a status check (\bbbext_bnx_datahub\check\meetingevents_enabled) registered via lib.php that surfaces the parent meeting events prerequisite on Site administration > Server > Status (OL-3.2.1).
 - fix: Declare bbbext_bnx_datahub_meeting in the privacy provider with field-level metadata, extend export_user_data() to include meeting metadata, and remove plugin-owned meeting rows in delete_data_for_all_users_in_context() (OL-3.2.3).
@@ -17,13 +17,15 @@
 - chore: Replace inline HTML strings with html_writer::span() in the attendance and engagement system reports (OL-4.1.2).
 - chore: Pin the bbbext_bnx dependency to 2026050102 (1.1.1) so the no-cross-plugin-enablement contract emitted by BNX is in place at install / upgrade time (CC-4).
 - chore: Sync db/install.xml VERSION with version.php (OL-3.1.1) and add an upgrade savepoint for 2026060200.
+- fix: Rename the reserved attendee fields `role` / `score` in `bbbext_bnx_datahub_meeting_user` to `attendeerole` / `attendeescore`, regenerate `db/install.xml` with the new canonical field names for fresh installs, and add an XMLDB upgrade step (`2026061000`) that renames the existing columns in place so upgrade sites keep their historical data intact (OL-4.1.7).
 - test: Invert the meeting events enablement conformance suite to assert the sidecar contract and add status-check coverage; bootstrap bigbluebuttonbn_meetingevents_enabled in every PHPUnit fixture that exercises BBB activity flows (CC-2).
 - test: Re-enable the previously @skipped Behat scenario covering the role capability prohibit path (OL-4.1.1).
 - ci: Seed bigbluebuttonbn_meetingevents_enabled in .github/workflows/gha.yml after Behat / PHPUnit init now that the install hook no longer auto-enables it (CC-5).
 - docs: Document the sidecar contract in README and refresh .copilot/ARCHITECTURE.md to remove references to the legacy sidecar_state_manager (CC-3, CC-6).
 
-Deferred:
-- OL-4.1.7 (rename reserved fields role / score in bbbext_bnx_datahub_meeting_user). Implemented with an XMLDB upgrade step that renames the target columns to attendeerole / attendeescore while preserving existing data.
-
 1.0.1 (April 15, 2026)
-- chore: Initial public release of bbbext_bnx_datahub.
+- feat: Initial public release of bbbext_bnx_datahub, including the core DataHub persistence model, attendance / engagement analytics capture, and the first generation of DataHub reports.
+- feat: Add legacy BN Reports migration support so historical settings and meeting data can be imported into DataHub during rollout.
+- feat: Add the first DataHub service-layer and debug-logging support for analytics processing and operational troubleshooting.
+- test: Add the initial automated test coverage and CI support for the plugin.
+- historical: This release still auto-enabled BigBlueButton meeting events during install / upgrade / enable flows; that behaviour shipped in the 1.0.x line and was removed later in 1.1-beta.1 when the sidecar contract was tightened.
