@@ -1,3 +1,6 @@
+1.1-beta.2 (July 2, 2026)
+- fix: Regenerate db/install.xml to canonical XMLDB form and drop the redundant meetingid index so the core plugin_checks_test passes (OL-3.1.1).
+
 1.0.2 (June 2, 2026)
 - fix: Stop writing the parent bigbluebuttonbn_meetingevents_enabled setting from install, upgrade, observer, and on_enable code paths to honor the sidecar contract (OL-3.2.1, CC-1).
 - feat: Add a status check (\bbbext_bnx_datahub\check\meetingevents_enabled) registered via lib.php that surfaces the parent meeting events prerequisite on Site administration > Server > Status (OL-3.2.1).

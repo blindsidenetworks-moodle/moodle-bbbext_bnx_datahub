@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/bigbluebuttonbn/extension/bnx_datahub/db" VERSION="2026061000" COMMENT="XMLDB file for Moodle bbbext_bnx_datahub plugin">
+<XMLDB PATH="mod/bigbluebuttonbn/extension/bnx_datahub/db" VERSION="2026061000" COMMENT="XMLDB file for Moodle bbbext_bnx_datahub plugin"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
+>
     <TABLES>
         <TABLE NAME="bbbext_bnx_datahub_meeting" COMMENT="Meetings held in BBB and reported by Analytics Callback">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="bnxid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Foreign key to bbbext_bnx.id"/>
+                <FIELD NAME="bnxid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key to bbbext_bnx.id"/>
                 <FIELD NAME="externalmeetingid" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
                 <FIELD NAME="internalmeetingid" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
                 <FIELD NAME="meetingname" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
@@ -25,7 +27,7 @@
         <TABLE NAME="bbbext_bnx_datahub_meeting_user" COMMENT="Users attending a Meeting held in BBB and reported by Analytics Callback">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="meetingid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Foreign key to bbbext_bnx_datahub_meeting.id"/>
+                <FIELD NAME="meetingid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key to bbbext_bnx_datahub_meeting.id"/>
                 <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
                 <FIELD NAME="fullname" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
                 <FIELD NAME="attendeerole" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
@@ -46,7 +48,6 @@
                 <KEY NAME="meetingid_fk" TYPE="foreign" FIELDS="meetingid" REFTABLE="bbbext_bnx_datahub_meeting" REFFIELDS="id"/>
             </KEYS>
             <INDEXES>
-                <INDEX NAME="meetingid" UNIQUE="false" FIELDS="meetingid"/>
                 <INDEX NAME="unique_meetingid_userid" UNIQUE="true" FIELDS="meetingid, userid"/>
             </INDEXES>
         </TABLE>
