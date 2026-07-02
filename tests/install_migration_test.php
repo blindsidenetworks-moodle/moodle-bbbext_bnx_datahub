@@ -45,6 +45,47 @@ final class install_migration_test extends \advanced_testcase {
     }
 
     /**
+     * A fresh install (db/install.php) must not run the heavy legacy data
+     * migration, but must still self-disable when the legacy sidecar is present
+     * (OL-4.1.1, OL-3.2.1).
+     */
+    public function test_install_does_not_migrate_data_but_self_disables(): void {
+        global $DB;
+
+        require_once(__DIR__ . '/../db/install.php');
+
+        $this->create_legacy_bnreports_tables();
+
+        $course = $this->getDataGenerator()->create_course();
+        $bbb = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+
+        $DB->insert_record(bbbext_bnx_datahub_legacy_bnreports_table('_meeting'), (object) [
+            'bigbluebuttonbnid' => $bbb->id,
+            'externalmeetingid' => 'ext-3001',
+            'internalmeetingid' => 'int-3001',
+            'meetingname' => 'Fresh install meeting',
+            'timestart' => 1700000000,
+            'timeend' => 1700003600,
+            'duration' => 3600,
+            'metadata' => null,
+            'rawdata' => null,
+        ]);
+
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        xmldb_bbbext_bnx_datahub_install();
+
+        // The heavy legacy data migration must NOT run at fresh install (OL-4.1.1).
+        $this->assertSame(0, $DB->count_records('bbbext_bnx_datahub_meeting', ['internalmeetingid' => 'int-3001']));
+        // But the conflict guard must self-disable DataHub (OL-3.2.1).
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+        // And the legacy sidecar namespace is never mutated.
+        $this->assertFalse(get_config('bbbext_bnreports', 'disabled'));
+    }
+
+    /**
      * BN Reports legacy settings, meetings and meeting users should be copied
      * into the BNX Datahub storage layout.
      */

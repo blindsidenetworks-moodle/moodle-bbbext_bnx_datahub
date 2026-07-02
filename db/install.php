@@ -36,6 +36,12 @@ function xmldb_bbbext_bnx_datahub_install() {
     // bbbext_bnx_datahub\check\meetingevents_enabled status check surfaces
     // the requirement (OL-3.2.1).
 
-    // Migrate legacy BN Reports data/settings and disable bnreports if present.
-    bbbext_bnx_datahub_migrate_bnreports_data();
+    // The legacy BN Reports *data* migration is intentionally NOT run here (OL-4.1.1).
+    // A fresh install has no legacy data to backfill, so the heavy migration only runs
+    // from db/upgrade.php for sites upgrading from a version that predates the backfill.
+    // We do, however, still resolve a concurrent-install conflict with the legacy
+    // sidecar: if bbbext_bnreports is installed and enabled, DataHub self-disables
+    // (own namespace only) so the two sidecars never process events at the same time
+    // (OL-3.2.1). This is a cheap guard, not a data migration.
+    bbbext_bnx_datahub_disable_if_bnreports_present();
 }
