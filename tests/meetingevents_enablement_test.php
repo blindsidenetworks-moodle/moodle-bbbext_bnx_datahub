@@ -128,4 +128,42 @@ final class meetingevents_enablement_test extends \advanced_testcase {
 
         $this->assertSame(\core\check\result::OK, $result->get_status());
     }
+
+    /**
+     * The bnreports conflict check warns when the legacy sidecar is present and
+     * DataHub has self-disabled (OL-3.2.1).
+     *
+     * @covers \bbbext_bnx_datahub\check\bnreports_conflict
+     */
+    public function test_bnreports_conflict_check_warns_when_self_disabled(): void {
+        $this->resetAfterTest(true);
+
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        set_config('disabled', 1, 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        $check = new \bbbext_bnx_datahub\check\bnreports_conflict();
+        $result = $check->get_result();
+
+        $this->assertSame(\core\check\result::WARNING, $result->get_status());
+    }
+
+    /**
+     * The bnreports conflict check is OK when the legacy sidecar is absent
+     * (OL-3.2.1).
+     *
+     * @covers \bbbext_bnx_datahub\check\bnreports_conflict
+     */
+    public function test_bnreports_conflict_check_ok_when_bnreports_absent(): void {
+        $this->resetAfterTest(true);
+
+        unset_config('version', 'bbbext_bnreports');
+        set_config('disabled', 1, 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        $check = new \bbbext_bnx_datahub\check\bnreports_conflict();
+        $result = $check->get_result();
+
+        $this->assertSame(\core\check\result::OK, $result->get_status());
+    }
 }

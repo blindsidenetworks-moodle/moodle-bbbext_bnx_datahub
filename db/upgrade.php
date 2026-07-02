@@ -78,5 +78,16 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026061000, 'bbbext', 'bnx_datahub');
     }
 
+    if ($oldversion < 2026070200) {
+        // Release 1.1-beta.2 (OL-3.2.1, Option D): resolve any concurrent-install
+        // conflict with the legacy bbbext_bnreports sidecar by self-disabling. This
+        // never mutates the bnreports namespace; it only writes DataHub's own
+        // 'disabled' flag when bnreports is still installed and enabled. The condition
+        // is surfaced to administrators by \bbbext_bnx_datahub\check\bnreports_conflict.
+        bbbext_bnx_datahub_disable_if_bnreports_present();
+
+        upgrade_plugin_savepoint(true, 2026070200, 'bbbext', 'bnx_datahub');
+    }
+
     return true;
 }

@@ -1,4 +1,5 @@
 1.1-beta.2 (July 2, 2026)
+- fix: Never mutate the sibling bbbext_bnreports configuration during migration. db/migration.php now (a) copies only an explicit allow-list of settings keys (bbbext_bnx_datahub_migratable_setting_keys) into DataHub's own namespace and (b) replaces the previous cross-plugin disable with bbbext_bnx_datahub_disable_if_bnreports_present(), which self-disables DataHub (writing only bbbext_bnx_datahub/disabled) whenever the legacy sidecar is still installed and enabled. Registered a new status check \bbbext_bnx_datahub\check\bnreports_conflict that surfaces the conflict and points administrators at the Plugins overview page to resolve it (OL-3.2.1).
 - fix: Regenerate db/install.xml in canonical XMLDB editor form (add the xmlns:xsi / xsi:noNamespaceSchemaLocation root attributes and SEQUENCE="false" on the bnxid and meetingid foreign-key fields) and drop the redundant standalone meetingid index that duplicated the meetingid_fk foreign key, so core\db\plugin_checks_test passes for bbbext_bnx_datahub (OL-3.1.1).
 
 1.0.2 (June 2, 2026)

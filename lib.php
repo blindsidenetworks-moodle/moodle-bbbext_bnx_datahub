@@ -33,5 +33,6 @@
 function bbbext_bnx_datahub_status_checks(): array {
     return [
         new \bbbext_bnx_datahub\check\meetingevents_enabled(),
+        new \bbbext_bnx_datahub\check\bnreports_conflict(),
     ];
 }
