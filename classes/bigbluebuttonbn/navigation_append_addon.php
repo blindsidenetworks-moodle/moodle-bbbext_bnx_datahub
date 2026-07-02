@@ -20,25 +20,31 @@ use context_module;
 use moodle_url;
 use navigation_node;
 use mod_bigbluebuttonbn\instance;
-use mod_bigbluebuttonbn\local\extension\navigation_override_addon as navigation_override_addon_interface;
+use mod_bigbluebuttonbn\local\extension\navigation_append_addon as navigation_append_addon_interface;
 
 /**
- * Override implementation for the bbbext_bnx_datahub subplugin.
+ * Append implementation for the bbbext_bnx_datahub subplugin.
+ *
+ * DataHub only adds report / completion-validate nodes to the BigBlueButtonBN
+ * settings navigation; it never replaces the parent navigation. It therefore
+ * implements the additive append contract instead of the exclusive override
+ * contract, so it no longer consumes the single override slot and other
+ * subplugins' navigation contributions are preserved (OL2-3.1.1).
  *
  * @package   bbbext_bnx_datahub
  * @copyright 2025 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
-class navigation_override_addon implements navigation_override_addon_interface {
+class navigation_append_addon implements navigation_append_addon_interface {
     /**
-     * Overrides the settings navigation for BigBlueButtonBN.
+     * Appends DataHub report links to the settings navigation for BigBlueButtonBN.
      *
      * @param \settings_navigation $settingsnav The settings navigation object.
      * @param \navigation_node $nodenav The current navigation node.
      * @return void
      */
-    public function override_settings_navigation(\settings_navigation $settingsnav, \navigation_node $nodenav): void {
+    public function append_settings_navigation(\settings_navigation $settingsnav, \navigation_node $nodenav): void {
         // Check if BNX is enabled.
         $enabledplugins = \core_plugin_manager::instance()->get_enabled_plugins('bbbext');
         if (!isset($enabledplugins['bnx'])) {
@@ -54,18 +60,12 @@ class navigation_override_addon implements navigation_override_addon_interface {
             $context = context_module::instance($cm->id);
             // Add these options only if the callback for meetingevents is enabled.
             if ((bool) \mod_bigbluebuttonbn\local\config::get('meetingevents_enabled')) {
-                global $USER;
-                if (has_capability('moodle/course:manageactivities', $context, $USER->id)) {
-                    // Validate completion link.
-                    $completionvalidate = '#action=completion_validate&bigbluebuttonbn=' . $cm->instance;
-                    $nodenav->add(
-                        get_string('completionvalidatestate', 'bigbluebuttonbn'),
-                        $completionvalidate,
-                        navigation_node::TYPE_CONTAINER
-                    );
-                    $nodenav->set_force_into_more_menu(true);
-                }
                 if (has_capability('bbbext/bnx_datahub:viewreports', $context)) {
+                    // Force every node already present on the module settings branch (the parent
+                    // module's own nodes plus its completion-validate link) into the "more" menu,
+                    // so DataHub's report links, added immediately afterwards, become the first
+                    // secondary-navigation tabs shown to the user (OL2-3.1.1).
+                    $nodenav->set_force_into_more_menu(true);
                     // Attendance report link.
                     $attendancereporturl = new moodle_url(
                         '/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php',

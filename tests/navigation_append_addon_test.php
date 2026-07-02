@@ -25,14 +25,14 @@ use ReflectionClass;
 use settings_navigation;
 
 /**
- * Tests for the navigation override addon class.
+ * Tests for the navigation append addon class.
  *
  * @package   bbbext_bnx_datahub
  * @copyright 2025 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers    \bbbext_bnx_datahub\bigbluebuttonbn\navigation_override_addon
+ * @covers    \bbbext_bnx_datahub\bigbluebuttonbn\navigation_append_addon
  */
-final class navigation_override_addon_test extends advanced_testcase {
+final class navigation_append_addon_test extends advanced_testcase {
     /**
      * Set up for each test.
      */
@@ -42,35 +42,35 @@ final class navigation_override_addon_test extends advanced_testcase {
     }
 
     /**
-     * Test that navigation override addon can be instantiated.
+     * Test that navigation append addon can be instantiated.
      */
     public function test_class_instantiation(): void {
-        $addon = new navigation_override_addon();
+        $addon = new navigation_append_addon();
 
-        $this->assertInstanceOf(navigation_override_addon::class, $addon);
+        $this->assertInstanceOf(navigation_append_addon::class, $addon);
     }
 
     /**
-     * Test that navigation override addon implements the interface.
+     * Test that navigation append addon implements the interface.
      */
     public function test_implements_interface(): void {
-        $addon = new navigation_override_addon();
+        $addon = new navigation_append_addon();
 
         $this->assertInstanceOf(
-            \mod_bigbluebuttonbn\local\extension\navigation_override_addon::class,
+            \mod_bigbluebuttonbn\local\extension\navigation_append_addon::class,
             $addon
         );
     }
 
     /**
-     * Test that override_settings_navigation method exists.
+     * Test that append_settings_navigation method exists.
      */
-    public function test_override_settings_navigation_method_exists(): void {
-        $addon = new navigation_override_addon();
+    public function test_append_settings_navigation_method_exists(): void {
+        $addon = new navigation_append_addon();
 
         $this->assertTrue(
-            method_exists($addon, 'override_settings_navigation'),
-            'Method override_settings_navigation should exist'
+            method_exists($addon, 'append_settings_navigation'),
+            'Method append_settings_navigation should exist'
         );
     }
 
@@ -78,10 +78,10 @@ final class navigation_override_addon_test extends advanced_testcase {
      * Test that the class checks for BNX plugin enablement.
      */
     public function test_requires_bnx_plugin(): void {
-        // The navigation override checks if BNX is enabled.
+        // The navigation append checks if BNX is enabled.
         // This is a structural test - we verify the check is in place.
-        $reflection = new ReflectionClass(navigation_override_addon::class);
-        $method = $reflection->getMethod('override_settings_navigation');
+        $reflection = new ReflectionClass(navigation_append_addon::class);
+        $method = $reflection->getMethod('append_settings_navigation');
 
         $this->assertNotNull($method);
 
@@ -95,7 +95,7 @@ final class navigation_override_addon_test extends advanced_testcase {
      * Test that the class checks for meetingevents_enabled configuration.
      */
     public function test_checks_meetingevents_config(): void {
-        $reflection = new ReflectionClass(navigation_override_addon::class);
+        $reflection = new ReflectionClass(navigation_append_addon::class);
 
         // Read the source code to verify meetingevents check is present.
         $source = file_get_contents($reflection->getFileName());
@@ -106,7 +106,7 @@ final class navigation_override_addon_test extends advanced_testcase {
      * Test that the class checks for viewreports capability.
      */
     public function test_checks_viewreports_capability(): void {
-        $reflection = new ReflectionClass(navigation_override_addon::class);
+        $reflection = new ReflectionClass(navigation_append_addon::class);
 
         // Read the source code to verify capability check is present.
         $source = file_get_contents($reflection->getFileName());
@@ -117,7 +117,7 @@ final class navigation_override_addon_test extends advanced_testcase {
      * Test that attendance report URL is constructed correctly.
      */
     public function test_attendance_report_url_format(): void {
-        $reflection = new ReflectionClass(navigation_override_addon::class);
+        $reflection = new ReflectionClass(navigation_append_addon::class);
 
         // Read the source code to verify URL format.
         $source = file_get_contents($reflection->getFileName());
@@ -129,7 +129,7 @@ final class navigation_override_addon_test extends advanced_testcase {
      * Test that engagement report URL is constructed correctly.
      */
     public function test_engagement_report_url_format(): void {
-        $reflection = new ReflectionClass(navigation_override_addon::class);
+        $reflection = new ReflectionClass(navigation_append_addon::class);
 
         // Read the source code to verify URL format.
         $source = file_get_contents($reflection->getFileName());
@@ -141,7 +141,7 @@ final class navigation_override_addon_test extends advanced_testcase {
      * Test that the class adds report links as navigation nodes.
      */
     public function test_adds_navigation_nodes(): void {
-        $reflection = new ReflectionClass(navigation_override_addon::class);
+        $reflection = new ReflectionClass(navigation_append_addon::class);
 
         // Read the source code to verify navigation node additions.
         $source = file_get_contents($reflection->getFileName());
@@ -153,7 +153,7 @@ final class navigation_override_addon_test extends advanced_testcase {
      * Test that recordings-only instances are excluded.
      */
     public function test_excludes_recordings_only_instances(): void {
-        $reflection = new ReflectionClass(navigation_override_addon::class);
+        $reflection = new ReflectionClass(navigation_append_addon::class);
 
         // Read the source code to verify recordings-only check.
         $source = file_get_contents($reflection->getFileName());
@@ -161,15 +161,29 @@ final class navigation_override_addon_test extends advanced_testcase {
     }
 
     /**
-     * Test that completion validate link is added for course managers.
+     * Test that the completion validate link is NOT added by the append addon.
+     *
+     * The parent mod_bigbluebuttonbn navigation already provides the completion
+     * validate node; appending it here would duplicate it (OL2-3.1.1).
      */
-    public function test_completion_validate_for_managers(): void {
-        $reflection = new ReflectionClass(navigation_override_addon::class);
+    public function test_does_not_append_completion_validate(): void {
+        $reflection = new ReflectionClass(navigation_append_addon::class);
 
-        // Read the source code to verify completion validate link.
+        // Read the source code to verify the completion validate link is absent.
         $source = file_get_contents($reflection->getFileName());
-        $this->assertStringContainsString('moodle/course:manageactivities', $source);
-        $this->assertStringContainsString('action=completion_validate', $source);
-        $this->assertStringContainsString('completionvalidatestate', $source);
+        $this->assertStringNotContainsString('action=completion_validate', $source);
+        $this->assertStringNotContainsString('completionvalidatestate', $source);
+    }
+
+    /**
+     * Test that pre-existing nodes are forced into the more menu before the report
+     * links are appended, so DataHub's reports become the first tabs shown (OL2-3.1.1).
+     */
+    public function test_forces_existing_nodes_into_more_menu(): void {
+        $reflection = new ReflectionClass(navigation_append_addon::class);
+
+        // Read the source code to verify the force-into-more-menu call is present.
+        $source = file_get_contents($reflection->getFileName());
+        $this->assertStringContainsString('set_force_into_more_menu(true)', $source);
     }
 }
