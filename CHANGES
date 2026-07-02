@@ -1,3 +1,6 @@
+1.1-beta.2 (July 2, 2026)
+- fix: Regenerate db/install.xml in canonical XMLDB editor form (add the xmlns:xsi / xsi:noNamespaceSchemaLocation root attributes and SEQUENCE="false" on the bnxid and meetingid foreign-key fields) and drop the redundant standalone meetingid index that duplicated the meetingid_fk foreign key, so core\db\plugin_checks_test passes for bbbext_bnx_datahub (OL-3.1.1).
+
 1.0.2 (June 2, 2026)
 - fix: Stop writing the parent bigbluebuttonbn_meetingevents_enabled setting from install, upgrade, observer, and on_enable code paths to honor the sidecar contract (OL-3.2.1, CC-1).
 - feat: Add a status check (\bbbext_bnx_datahub\check\meetingevents_enabled) registered via lib.php that surfaces the parent meeting events prerequisite on Site administration > Server > Status (OL-3.2.1).
