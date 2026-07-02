@@ -20,6 +20,9 @@ namespace bbbext_bnx_datahub;
  * Tests for install-time migration from BN Reports.
  *
  * @covers ::bbbext_bnx_datahub_migrate_bnreports_data
+ * @covers ::bbbext_bnx_datahub_migrate_bnreports_settings
+ * @covers ::bbbext_bnx_datahub_migratable_setting_keys
+ * @covers ::bbbext_bnx_datahub_disable_if_bnreports_present
  * @covers ::bbbext_bnx_datahub_ensure_bnx_record
  * @covers ::bbbext_bnx_datahub_legacy_bnreports_table
  * @package   bbbext_bnx_datahub
@@ -83,8 +86,12 @@ final class install_migration_test extends \advanced_testcase {
             'rawdata' => json_encode(['legacy' => true]),
         ]);
 
+        set_config('enable_debug_logging', '1', 'bbbext_bnreports');
         set_config('sample_legacy_flag', 'enabled', 'bbbext_bnreports');
         set_config('version', '2024110600', 'bbbext_bnreports');
+        // Simulate a DataHub install that has not yet recorded this allow-listed key,
+        // so the migration copy path is actually exercised.
+        unset_config('enable_debug_logging', 'bbbext_bnx_datahub');
         \core_plugin_manager::reset_caches();
 
         bbbext_bnx_datahub_migrate_bnreports_data();
@@ -99,8 +106,44 @@ final class install_migration_test extends \advanced_testcase {
         $this->assertSame('Legacy User', (string) $meetinguser->fullname);
         $this->assertSame('viewer', (string) $meetinguser->attendeerole);
 
-        $this->assertSame('enabled', get_config('bbbext_bnx_datahub', 'sample_legacy_flag'));
-        $this->assertSame('1', get_config('bbbext_bnreports', 'disabled'));
+        // Only allow-listed keys are migrated into the DataHub namespace (OL-3.2.1).
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'enable_debug_logging'));
+        // Non-allow-listed legacy keys are never copied across.
+        $this->assertFalse(get_config('bbbext_bnx_datahub', 'sample_legacy_flag'));
+        // DataHub self-disables (own namespace) rather than mutating bnreports (OL-3.2.1).
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+        $this->assertFalse(get_config('bbbext_bnreports', 'disabled'));
+    }
+
+    /**
+     * When the legacy BN Reports sidecar is not installed, DataHub must not
+     * self-disable and must not touch the bnreports namespace (OL-3.2.1).
+     */
+    public function test_no_self_disable_when_bnreports_absent(): void {
+        // Ensure no legacy sidecar version is registered.
+        unset_config('version', 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        bbbext_bnx_datahub_disable_if_bnreports_present();
+
+        $this->assertFalse(get_config('bbbext_bnx_datahub', 'disabled'));
+        $this->assertFalse(get_config('bbbext_bnreports', 'disabled'));
+    }
+
+    /**
+     * When the administrator has already disabled the legacy sidecar there is no
+     * conflict, so DataHub must not self-disable (OL-3.2.1).
+     */
+    public function test_no_self_disable_when_bnreports_already_disabled(): void {
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        set_config('disabled', 1, 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        bbbext_bnx_datahub_disable_if_bnreports_present();
+
+        $this->assertFalse(get_config('bbbext_bnx_datahub', 'disabled'));
     }
 
     /**

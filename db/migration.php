@@ -49,6 +49,12 @@ function bbbext_bnx_datahub_migrate_bnreports_data(): void {
 
     bbbext_bnx_datahub_migrate_bnreports_settings();
 
+    // Deliberate, one-time, guarded hand-off (OL-3.2.1, Option D). DataHub is the
+    // successor to the legacy bbbext_bnreports sidecar. We never mutate the sibling
+    // component's configuration; instead, if bnreports is still present we self-disable
+    // (see bbbext_bnx_datahub_disable_if_bnreports_present) and surface the conflict to
+    // the administrator via \bbbext_bnx_datahub\check\bnreports_conflict.
+
     $legacymeetingtable = new xmldb_table(bbbext_bnx_datahub_legacy_bnreports_table('_meeting'));
     $legacyusertable = new xmldb_table(bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user'));
     $targetmeetingtable = new xmldb_table('bbbext_bnx_datahub_meeting');
@@ -65,11 +71,31 @@ function bbbext_bnx_datahub_migrate_bnreports_data(): void {
         bbbext_bnx_datahub_migrate_bnreports_meetings($now);
     }
 
-    bbbext_bnx_datahub_disable_legacy_bnreports();
+    bbbext_bnx_datahub_disable_if_bnreports_present();
 }
 
 /**
- * Migrate bbbext_bnreports component settings into bbbext_bnx_datahub.
+ * Setting keys that DataHub is willing to inherit from the legacy bbbext_bnreports
+ * component during migration.
+ *
+ * This is an explicit allow-list (OL-3.2.1): only settings that DataHub itself
+ * understands are copied into its own namespace. Any other bbbext_bnreports config
+ * key (including forward-incompatible or unknown keys) is ignored, so migration can
+ * never smuggle arbitrary configuration into the DataHub namespace.
+ *
+ * @return string[]
+ */
+function bbbext_bnx_datahub_migratable_setting_keys(): array {
+    return [
+        'enable_debug_logging',
+    ];
+}
+
+/**
+ * Migrate the allow-listed bbbext_bnreports component settings into bbbext_bnx_datahub.
+ *
+ * Only keys returned by bbbext_bnx_datahub_migratable_setting_keys() are considered,
+ * and an existing DataHub value is never overwritten.
  *
  * @return void
  */
@@ -79,14 +105,16 @@ function bbbext_bnx_datahub_migrate_bnreports_settings(): void {
         return;
     }
 
-    foreach ($legacysettings as $name => $value) {
-        if ($name === 'version' || $name === 'disabled') {
+    foreach (bbbext_bnx_datahub_migratable_setting_keys() as $name) {
+        // Only copy keys that the legacy component actually defined.
+        if (!array_key_exists($name, $legacysettings)) {
             continue;
         }
+        // Never overwrite a value DataHub already owns.
         if (get_config('bbbext_bnx_datahub', $name) !== false) {
             continue;
         }
-        set_config($name, $value, 'bbbext_bnx_datahub');
+        set_config($name, $legacysettings[$name], 'bbbext_bnx_datahub');
     }
 }
 
@@ -307,25 +335,46 @@ function bbbext_bnx_datahub_ensure_bnx_record(int $moduleid, int $now, ?array &$
 }
 
 /**
- * Disable the legacy BN Reports sidecar if it is installed and enabled.
+ * Self-disable DataHub when the legacy BN Reports sidecar is still present.
+ *
+ * OL-3.2.1 (Option D): DataHub must never mutate a sibling component's configuration.
+ * Both DataHub and the legacy bbbext_bnreports sidecar consume the same BigBlueButton
+ * meeting-events stream, so running them concurrently would double-process events. To
+ * resolve the conflict without touching bnreports, DataHub disables *itself* (writing
+ * only into its own bbbext_bnx_datahub namespace) whenever bnreports is installed and
+ * still enabled.
+ *
+ * Recovery is entirely in the administrator's hands: once bnreports is removed or
+ * disabled from the Plugins overview page, DataHub can be re-enabled from the same page.
+ * The condition is surfaced by \bbbext_bnx_datahub\check\bnreports_conflict.
  *
  * @return void
  */
-function bbbext_bnx_datahub_disable_legacy_bnreports(): void {
+function bbbext_bnx_datahub_disable_if_bnreports_present(): void {
     $pm = \core_plugin_manager::instance();
     $installed = $pm->get_installed_plugins('bbbext');
+
+    // Nothing to resolve if the legacy sidecar is not installed at all.
     if (!isset($installed['bnreports'])) {
         return;
     }
 
-    $oldvalue = get_config('bbbext_bnreports', 'disabled');
-    if (!empty($oldvalue)) {
+    // If an administrator has already disabled the legacy sidecar, there is no conflict
+    // and DataHub is free to run; do not self-disable in that case.
+    if (!empty(get_config('bbbext_bnreports', 'disabled'))) {
         return;
     }
 
-    set_config('disabled', 1, 'bbbext_bnreports');
+    // Do not thrash config/log if DataHub is already self-disabled.
+    if (!empty(get_config('bbbext_bnx_datahub', 'disabled'))) {
+        return;
+    }
+
+    // Self-disable: write only into DataHub's own namespace.
+    $oldvalue = get_config('bbbext_bnx_datahub', 'disabled');
+    set_config('disabled', 1, 'bbbext_bnx_datahub');
     if (function_exists('add_to_config_log')) {
-        add_to_config_log('disabled', $oldvalue, 1, 'bbbext_bnreports');
+        add_to_config_log('disabled', $oldvalue, 1, 'bbbext_bnx_datahub');
     }
     \core_plugin_manager::reset_caches();
 }
