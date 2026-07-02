@@ -16,6 +16,8 @@
 
 namespace bbbext_bnx_datahub;
 
+use mod_bigbluebuttonbn\extension;
+
 /**
  * Sidecar contract conformance tests.
  *
@@ -140,6 +142,63 @@ final class meetingevents_enablement_test extends \advanced_testcase {
 
         set_config('version', '2024110600', 'bbbext_bnreports');
         set_config('disabled', 1, 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        $check = new \bbbext_bnx_datahub\check\bnreports_conflict();
+        $result = $check->get_result();
+
+        $this->assertSame(\core\check\result::WARNING, $result->get_status());
+    }
+
+    /**
+     * DataHub cannot be manually re-enabled while the legacy BN Reports sidecar
+     * remains enabled.
+     */
+    public function test_datahub_enable_is_blocked_while_bnreports_enabled(): void {
+        $this->resetAfterTest(true);
+
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnreports');
+        set_config('disabled', 1, 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        $manager = \core_plugin_manager::resolve_plugininfo_class(extension::BBB_EXTENSION_PLUGIN_NAME);
+        $result = $manager::enable_plugin('bnx_datahub', 1);
+
+        $this->assertFalse($result);
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+    }
+
+    /**
+     * Re-enabling BN Reports must immediately self-disable DataHub again.
+     */
+    public function test_enabling_bnreports_self_disables_datahub(): void {
+        $this->resetAfterTest(true);
+
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        set_config('disabled', 1, 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        $manager = \core_plugin_manager::resolve_plugininfo_class(extension::BBB_EXTENSION_PLUGIN_NAME);
+        $result = $manager::enable_plugin('bnreports', 1);
+
+        $this->assertTrue($result);
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+        $this->assertFalse(get_config('bbbext_bnreports', 'disabled'));
+    }
+
+    /**
+     * The status check also warns if both sidecars are simultaneously enabled.
+     *
+     * @covers \bbbext_bnx_datahub\check\bnreports_conflict
+     */
+    public function test_bnreports_conflict_check_warns_when_both_sidecars_enabled(): void {
+        $this->resetAfterTest(true);
+
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnx_datahub');
         \core_plugin_manager::reset_caches();
 
         $check = new \bbbext_bnx_datahub\check\bnreports_conflict();

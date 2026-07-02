@@ -65,7 +65,7 @@ class bnreports_conflict extends check {
     }
 
     /**
-     * Report whether DataHub is self-disabled because bnreports is present.
+     * Report whether BN Reports conflicts with DataHub.
      *
      * @return result
      */
@@ -82,6 +82,14 @@ class bnreports_conflict extends check {
                 result::WARNING,
                 get_string('check_bnreports_conflict_warning', 'bbbext_bnx_datahub'),
                 get_string('check_bnreports_conflict_warning_details', 'bbbext_bnx_datahub')
+            );
+        }
+
+        if ($bnreportspresent) {
+            return new result(
+                result::WARNING,
+                get_string('check_bnreports_conflict_active_warning', 'bbbext_bnx_datahub'),
+                get_string('check_bnreports_conflict_active_warning_details', 'bbbext_bnx_datahub')
             );
         }
 
