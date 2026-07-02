@@ -1,10 +1,10 @@
 1.1-beta.2 (July 2, 2026)
 - refactor: Fresh installs no longer run the legacy BN Reports data migration (which only applies to upgrades); a lightweight conflict guard is kept so a fresh install alongside BN Reports still self-disables (OL2-4.1.1).
-- fix: DataHub no longer disables the legacy BN Reports plugin. Instead it self-disables when BN Reports is still installed and enabled, migrates only an allow-listed set of settings into its own namespace, and surfaces the conflict via a new status check so administrators can resolve it from the Plugins overview page (OL2-3.2.1).
+- fix: DataHub no longer disables the legacy BN Reports plugin. Instead it self-disables when BN Reports is still installed and enabled, cannot be manually re-enabled until BN Reports is disabled, is automatically self-disabled again if BN Reports is later re-enabled, and surfaces the conflict via both the extension-management page and a status check so administrators can resolve it from the Plugins overview page (OL2-3.2.1).
 - fix: DataHub now appends its report links to the BigBlueButtonBN settings navigation instead of overriding it, so other extension subplugins keep their own navigation and the parent module's navigation Behat scenarios pass (OL2-3.1.1).
 - fix: Regenerate db/install.xml to canonical XMLDB form and drop the redundant meetingid index so the core plugin_checks_test passes (OL2-3.1.1).
 
-1.0.2 (June 2, 2026)
+1.1-beta.1 (June 10, 2026)
 - fix: Stop writing the parent bigbluebuttonbn_meetingevents_enabled setting from install, upgrade, observer, and on_enable code paths to honor the sidecar contract (OL-3.2.1, CC-1).
 - feat: Add a status check (\bbbext_bnx_datahub\check\meetingevents_enabled) registered via lib.php that surfaces the parent meeting events prerequisite on Site administration > Server > Status (OL-3.2.1).
 - fix: Declare bbbext_bnx_datahub_meeting in the privacy provider with field-level metadata, extend export_user_data() to include meeting metadata, and remove plugin-owned meeting rows in delete_data_for_all_users_in_context() (OL-3.2.3).
@@ -17,13 +17,15 @@
 - chore: Replace inline HTML with html_writer::span() in attendance and engagement system reports (OL-4.1.2).
 - chore: Pin the bbbext_bnx dependency to 2026050102 / 1.1.1 (CC-4).
 - chore: Sync db/install.xml VERSION with version.php and add a 2026060200 upgrade savepoint (OL-3.1.1).
+- fix: Rename the reserved attendee fields `role` / `score` to `attendeerole` / `attendeescore` for both fresh installs and upgrades, using an XMLDB upgrade step that preserves existing meeting-user data in place (OL-4.1.7).
 - test: Invert the meeting events enablement conformance suite, add status-check coverage, and seed bigbluebuttonbn_meetingevents_enabled in every PHPUnit fixture that exercises BBB activity flows (CC-2).
 - test: Re-enable the previously @skipped Behat scenario for the prohibited-capability path (OL-4.1.1).
 - ci: Seed bigbluebuttonbn_meetingevents_enabled in the GitHub Actions workflow after Behat / PHPUnit init (CC-5).
 - docs: Document the sidecar contract in README and refresh .copilot/ARCHITECTURE.md (CC-3, CC-6).
 
-Deferred:
-- OL-4.1.7 (rename reserved fields role / score in bbbext_bnx_datahub_meeting_user). Implemented with a seamless XMLDB rename to attendeerole / attendeescore for existing installations and matching names for new installs.
-
 1.0.1 (April 15, 2026)
-- chore: Initial public release of bbbext_bnx_datahub.
+- feat: Initial public release of DataHub, including attendance / engagement analytics capture, report generation, and the core persistence model.
+- feat: Added rollout support for importing legacy BN Reports settings and meeting data into DataHub.
+- feat: Added the first service-layer and debug-logging support for DataHub processing.
+- test: Added the initial automated tests and CI support.
+- historical: This 1.0.x release line still auto-enabled BigBlueButton meeting events during install / upgrade / enable flows; that shipped behaviour was removed later in 1.1-beta.1 when the sidecar contract was tightened.
