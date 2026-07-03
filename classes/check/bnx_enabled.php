@@ -28,6 +28,8 @@ use core\check\result;
  */
 class bnx_enabled extends check {
     /**
+     * Return the stable identifier for this prerequisite check.
+     *
      * @return string
      */
     public function get_ref(): string {
@@ -35,6 +37,8 @@ class bnx_enabled extends check {
     }
 
     /**
+     * Return the administrator-facing name for this prerequisite check.
+     *
      * @return string
      */
     public function get_name(): string {
@@ -42,6 +46,8 @@ class bnx_enabled extends check {
     }
 
     /**
+     * Return the action link that helps administrators resolve the prerequisite.
+     *
      * @return \action_link|null
      */
     public function get_action_link(): ?\action_link {
@@ -52,6 +58,8 @@ class bnx_enabled extends check {
     }
 
     /**
+     * Evaluate whether the required BNX sidecar is currently enabled.
+     *
      * @return result
      */
     public function get_result(): result {
