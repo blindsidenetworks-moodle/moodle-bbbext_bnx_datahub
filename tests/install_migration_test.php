@@ -22,6 +22,8 @@ namespace bbbext_bnx_datahub;
  * @covers ::bbbext_bnx_datahub_migrate_bnreports_data
  * @covers ::bbbext_bnx_datahub_migrate_bnreports_settings
  * @covers ::bbbext_bnx_datahub_migratable_setting_keys
+ * @covers ::bbbext_bnx_datahub_is_bnx_enabled
+ * @covers ::bbbext_bnx_datahub_disable_if_bnx_unavailable
  * @covers ::bbbext_bnx_datahub_disable_if_bnreports_present
  * @covers ::bbbext_bnx_datahub_ensure_bnx_record
  * @covers ::bbbext_bnx_datahub_legacy_bnreports_table
@@ -183,6 +185,35 @@ final class install_migration_test extends \advanced_testcase {
         \core_plugin_manager::reset_caches();
 
         bbbext_bnx_datahub_disable_if_bnreports_present();
+
+        $this->assertFalse(get_config('bbbext_bnx_datahub', 'disabled'));
+    }
+
+    /**
+     * When BNX is disabled, DataHub must self-disable and leave BNX untouched.
+     */
+    public function test_self_disable_when_bnx_disabled(): void {
+        set_config('version', '2026060200', 'bbbext_bnx');
+        set_config('disabled', 1, 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        bbbext_bnx_datahub_disable_if_bnx_unavailable();
+
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+        $this->assertSame('1', get_config('bbbext_bnx', 'disabled'));
+    }
+
+    /**
+     * When BNX is enabled, the BNX guard must not self-disable DataHub.
+     */
+    public function test_no_self_disable_when_bnx_enabled(): void {
+        set_config('version', '2026060200', 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        bbbext_bnx_datahub_disable_if_bnx_unavailable();
 
         $this->assertFalse(get_config('bbbext_bnx_datahub', 'disabled'));
     }

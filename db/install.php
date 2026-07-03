@@ -43,5 +43,6 @@ function xmldb_bbbext_bnx_datahub_install() {
     // sidecar: if bbbext_bnreports is installed and enabled, DataHub self-disables
     // (own namespace only) so the two sidecars never process events at the same time
     // (OL-3.2.1). This is a cheap guard, not a data migration.
+    bbbext_bnx_datahub_disable_if_bnx_unavailable();
     bbbext_bnx_datahub_disable_if_bnreports_present();
 }

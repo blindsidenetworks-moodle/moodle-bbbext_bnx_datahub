@@ -378,3 +378,44 @@ function bbbext_bnx_datahub_disable_if_bnreports_present(): void {
     }
     \core_plugin_manager::reset_caches();
 }
+
+/**
+ * Return whether the required BNX sidecar is installed and enabled.
+ *
+ * DataHub depends on bbbext_bnx for its room-level records and navigation
+ * integrations. If BNX is disabled, DataHub must not keep running as if its
+ * dependency were healthy.
+ *
+ * @return bool
+ */
+function bbbext_bnx_datahub_is_bnx_enabled(): bool {
+    $pm = \core_plugin_manager::instance();
+    $installed = $pm->get_installed_plugins('bbbext');
+
+    return isset($installed['bnx']) && empty(get_config('bbbext_bnx', 'disabled'));
+}
+
+/**
+ * Self-disable DataHub when the required BNX sidecar is unavailable.
+ *
+ * DataHub never toggles BNX. Instead, if BNX is missing or disabled, DataHub
+ * writes only its own disabled flag and leaves recovery to the administrator.
+ *
+ * @return void
+ */
+function bbbext_bnx_datahub_disable_if_bnx_unavailable(): void {
+    if (bbbext_bnx_datahub_is_bnx_enabled()) {
+        return;
+    }
+
+    if (!empty(get_config('bbbext_bnx_datahub', 'disabled'))) {
+        return;
+    }
+
+    $oldvalue = get_config('bbbext_bnx_datahub', 'disabled');
+    set_config('disabled', 1, 'bbbext_bnx_datahub');
+    if (function_exists('add_to_config_log')) {
+        add_to_config_log('disabled', $oldvalue, 1, 'bbbext_bnx_datahub');
+    }
+    \core_plugin_manager::reset_caches();
+}
