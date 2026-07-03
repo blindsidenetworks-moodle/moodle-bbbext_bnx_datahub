@@ -78,6 +78,8 @@ final class meetingevents_enablement_test extends \advanced_testcase {
 
     /**
      * The legacy cross-plugin auto-enable hook must remain removed.
+     *
+     * @coversNothing
      */
     public function test_legacy_cross_plugin_auto_enable_hook_is_removed(): void {
         $this->assertFileDoesNotExist(
@@ -137,6 +139,10 @@ final class meetingevents_enablement_test extends \advanced_testcase {
      */
     public function test_bnx_disable_event_self_disables_datahub(): void {
         $this->resetAfterTest(true);
+
+        if (!class_exists(\bbbext_bnx\event\state_changed::class)) {
+            $this->markTestSkipped('bbbext_bnx is not available in this test environment.');
+        }
 
         set_config('version', '2026060200', 'bbbext_bnx');
         set_config('disabled', 1, 'bbbext_bnx');

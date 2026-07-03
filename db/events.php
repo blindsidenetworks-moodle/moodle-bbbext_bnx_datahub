@@ -14,6 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Event observers for DataHub.
+ *
+ * @package   bbbext_bnx_datahub
+ * @copyright 2026 onwards, Blindside Networks Inc
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
+ */
+
+defined('MOODLE_INTERNAL') || die();
+
 $observers = [
     [
         'eventname' => '\\bbbext_bnx\\event\\state_changed',
