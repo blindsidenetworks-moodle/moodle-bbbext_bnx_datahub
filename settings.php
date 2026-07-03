@@ -25,6 +25,36 @@
 defined('MOODLE_INTERNAL') || die();
 
 if ($ADMIN->fulltree) {
+    global $OUTPUT;
+
+    // Surface the same prerequisite/conflict use cases as the status checks, directly on
+    // the DataHub settings page, without mutating or depending on core mod_bigbluebuttonbn.
+    $datahubchecks = [
+        new \bbbext_bnx_datahub\check\bnx_enabled(),
+        new \bbbext_bnx_datahub\check\meetingevents_enabled(),
+        new \bbbext_bnx_datahub\check\bnreports_conflict(),
+    ];
+    foreach ($datahubchecks as $datahubcheck) {
+        $checkresult = $datahubcheck->get_result();
+        if ($checkresult->get_status() === \core\check\result::OK) {
+            continue;
+        }
+        $noticebody = html_writer::tag('strong', $checkresult->get_summary());
+        $details = $checkresult->get_details();
+        if ($details !== '') {
+            $noticebody .= html_writer::div($details);
+        }
+        $actionlink = $datahubcheck->get_action_link();
+        if ($actionlink !== null) {
+            $noticebody .= html_writer::div($OUTPUT->render($actionlink));
+        }
+        $settings->add(new admin_setting_description(
+            'bbbext_bnx_datahub/notice_' . $datahubcheck->get_ref(),
+            '',
+            $OUTPUT->notification($noticebody, \core\output\notification::NOTIFY_WARNING)
+        ));
+    }
+
     $settings->add(new admin_setting_configcheckbox(
         'bbbext_bnx_datahub/enable_debug_logging',
         new lang_string('config_enable_debug_logging', 'bbbext_bnx_datahub'),

@@ -1,6 +1,8 @@
 1.1-beta.2 (July 2, 2026)
 - refactor: Fresh installs no longer run the legacy BN Reports data migration (which only applies to upgrades); a lightweight conflict guard is kept so a fresh install alongside BN Reports still self-disables (OL2-4.1.1).
-- fix: DataHub no longer disables the legacy BN Reports plugin. Instead it self-disables when BN Reports is still installed and enabled, cannot be manually re-enabled until BN Reports is disabled, is automatically self-disabled again if BN Reports is later re-enabled, and surfaces the conflict via both the extension-management page and a status check so administrators can resolve it from the Plugins overview page (OL2-3.2.1).
+- fix: DataHub no longer disables the legacy BN Reports plugin. Instead it self-disables when BN Reports is still installed and enabled, and surfaces the conflict from its own settings page plus a status check so administrators can resolve it from the Plugins overview page (OL2-3.2.1).
+- fix: DataHub now treats BN Experience (`bbbext_bnx`) as a live prerequisite. If BNX is disabled, DataHub self-disables and exposes the requirement from its own settings page plus a dedicated status check so administrators can resolve it from the Plugins overview page.
+- fix: If DataHub is enabled while BigBlueButton meeting-events callback processing is disabled, the DataHub settings page now shows an administrator warning explaining that meeting events must be enabled for attendance and engagement processing to work.
 - fix: DataHub now appends its report links to the BigBlueButtonBN settings navigation instead of overriding it, so other extension subplugins keep their own navigation and the parent module's navigation Behat scenarios pass (OL2-3.1.1).
 - fix: Regenerate db/install.xml to canonical XMLDB form and drop the redundant meetingid index so the core plugin_checks_test passes (OL2-3.1.1).
 
