@@ -31,15 +31,15 @@ jobs:
             -p 3306:3306 \
             -d \
             --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=1024M \
-            mariadb:10 \
+            mariadb:11 \
               --character-set-server=utf8mb4 \
               --collation-server=utf8mb4_unicode_ci
 
       - name: Wait for MariaDB
         if: ${{ matrix.database == 'mariadb' }}
         run: |
-          container_id=$(docker ps -q --filter ancestor=mariadb:10 | head -n1)
-          until docker exec "$container_id" mysqladmin ping -h127.0.0.1 -uroot --silent; do
+          container_id=$(docker ps -q --filter ancestor=mariadb:11 | head -n1)
+          until docker exec "$container_id" mariadb-admin ping -h127.0.0.1 -uroot --silent; do
             sleep 2
           done
 
@@ -53,12 +53,12 @@ jobs:
             -p 5432:5432 \
             -d \
             --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid,size=1024M \
-            postgres:16
+            postgres:17
 
       - name: Wait for PostgreSQL
         if: ${{ matrix.database == 'pgsql' }}
         run: |
-          container_id=$(docker ps -q --filter ancestor=postgres:16 | head -n1)
+          container_id=$(docker ps -q --filter ancestor=postgres:17 | head -n1)
           until docker exec "$container_id" pg_isready -U postgres; do
             sleep 2
           done
