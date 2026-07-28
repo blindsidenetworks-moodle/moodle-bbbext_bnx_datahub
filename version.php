@@ -26,14 +26,14 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component    = 'bbbext_bnx_datahub';
-$plugin->release      = '1.1-beta.2';
-$plugin->version      = 2026070200;
+$plugin->release      = '1.1-rc.1';
+$plugin->version      = 2026280000;
 $plugin->requires     = 2025100600; // Moodle 5.1.0 minimum.
 $plugin->supported    = [501, 503];
-$plugin->maturity     = MATURITY_BETA;
+$plugin->maturity     = MATURITY_RC;
 $plugin->dependencies = [
-    // Pin to BNX 1.2 (2026060200) so the no-cross-plugin-enablement
+    // Pin to BNX 1.2 (2026072700) so the no-cross-plugin-enablement
     // contract emitted by bbbext_bnx (state_changed event) is in place
     // before bbbext_bnx_datahub installs / upgrades (CC-4).
-    'bbbext_bnx'         => 2026060200,
+    'bbbext_bnx'         => 2026072700,
 ];

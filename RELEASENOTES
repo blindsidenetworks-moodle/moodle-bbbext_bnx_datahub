@@ -1,3 +1,6 @@
+1.1-rc.1 (July 28, 2026)
+- chore: Promote the 1.1 release line from beta to release candidate (rc.1) with no additional schema or runtime changes beyond 1.1-beta.2.
+
 1.1-beta.2 (July 2, 2026)
 - refactor: Fresh installs no longer run the legacy BN Reports data migration (which only applies to upgrades); a lightweight conflict guard is kept so a fresh install alongside BN Reports still self-disables (OL2-4.1.1).
 - fix: DataHub no longer disables the legacy BN Reports plugin. Instead it self-disables when BN Reports is still installed and enabled, and surfaces the conflict from its own settings page plus a status check so administrators can resolve it from the Plugins overview page (OL2-3.2.1).
