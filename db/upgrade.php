@@ -78,14 +78,14 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026061000, 'bbbext', 'bnx_datahub');
     }
 
-    if ($oldversion < 2026280000) {
+    if ($oldversion < 2026072800) {
         // 1.1 release line: 2026070200 was an internal beta marker and is kept
         // inside this pre-final block rather than as a standalone savepoint.
         // Keep the bnreports conflict guard for upgrades from earlier 1.1.x
         // builds while finishing at the rc.1 marker.
         bbbext_bnx_datahub_disable_if_bnreports_present();
 
-        upgrade_plugin_savepoint(true, 2026280000, 'bbbext', 'bnx_datahub');
+        upgrade_plugin_savepoint(true, 2026072800, 'bbbext', 'bnx_datahub');
     }
 
     return true;

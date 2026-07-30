@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/bigbluebuttonbn/extension/bnx_datahub/db" VERSION="2026280000" COMMENT="XMLDB file for Moodle bbbext_bnx_datahub plugin"
+<XMLDB PATH="mod/bigbluebuttonbn/extension/bnx_datahub/db" VERSION="2026072800" COMMENT="XMLDB file for Moodle bbbext_bnx_datahub plugin"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
 >
     <TABLES>
