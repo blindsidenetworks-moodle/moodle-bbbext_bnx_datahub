@@ -24,15 +24,18 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once(__DIR__ . '/classes/check/bnreports_migration_pending.php');
+
 if ($ADMIN->fulltree) {
     global $OUTPUT;
 
     // Surface the same prerequisite/conflict use cases as the status checks, directly on
     // the DataHub settings page, without mutating or depending on core mod_bigbluebuttonbn.
     $datahubchecks = [
+        new \bbbext_bnx_datahub\check\bnreports_conflict(),
         new \bbbext_bnx_datahub\check\bnx_enabled(),
         new \bbbext_bnx_datahub\check\meetingevents_enabled(),
-        new \bbbext_bnx_datahub\check\bnreports_conflict(),
+        new \bbbext_bnx_datahub\check\bnreports_migration_pending(),
     ];
     foreach ($datahubchecks as $datahubcheck) {
         $checkresult = $datahubcheck->get_result();
@@ -48,10 +51,13 @@ if ($ADMIN->fulltree) {
         if ($actionlink !== null) {
             $noticebody .= html_writer::div($OUTPUT->render($actionlink));
         }
+        $notificationtype = $datahubcheck->get_ref() === 'bbbext_bnx_datahub_bnreports_conflict'
+            ? \core\output\notification::NOTIFY_ERROR
+            : \core\output\notification::NOTIFY_WARNING;
         $settings->add(new admin_setting_description(
             'bbbext_bnx_datahub/notice_' . $datahubcheck->get_ref(),
             '',
-            $OUTPUT->notification($noticebody, \core\output\notification::NOTIFY_WARNING)
+            $OUTPUT->notification($noticebody, $notificationtype)
         ));
     }
 

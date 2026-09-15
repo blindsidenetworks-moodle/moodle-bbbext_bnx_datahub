@@ -75,6 +75,143 @@ function bbbext_bnx_datahub_migrate_bnreports_data(): void {
 }
 
 /**
+ * Return whether any legacy BN Reports rows still need to be migrated.
+ *
+ * The check is purely observational: it compares legacy BN Reports meetings and
+ * attendees against the DataHub rows already present and returns true only when
+ * at least one legacy record has no corresponding DataHub record yet.
+ *
+ * @return bool
+ */
+function bbbext_bnx_datahub_has_pending_bnreports_migration(): bool {
+    global $DB;
+
+    $dbman = $DB->get_manager();
+    $legacymeetingtable = new xmldb_table(bbbext_bnx_datahub_legacy_bnreports_table('_meeting'));
+    $legacyusertable = new xmldb_table(bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user'));
+    $targetmeetingtable = new xmldb_table('bbbext_bnx_datahub_meeting');
+    $targetusertable = new xmldb_table('bbbext_bnx_datahub_meeting_user');
+
+    if (
+        !$dbman->table_exists($legacymeetingtable)
+        || !$dbman->table_exists($legacyusertable)
+        || !$dbman->table_exists($targetmeetingtable)
+        || !$dbman->table_exists($targetusertable)
+    ) {
+        return false;
+    }
+
+    $legacymeetings = $DB->get_records(bbbext_bnx_datahub_legacy_bnreports_table('_meeting'));
+    if (empty($legacymeetings)) {
+        return false;
+    }
+
+    $internalmeetingids = [];
+    foreach ($legacymeetings as $legacymeeting) {
+        $internal = trim((string) ($legacymeeting->internalmeetingid ?? ''));
+        if ($internal !== '') {
+            $internalmeetingids[$internal] = true;
+        }
+    }
+
+    $existingmeetings = empty($internalmeetingids)
+        ? []
+        : array_column(
+            $DB->get_records_list(
+                'bbbext_bnx_datahub_meeting',
+                'internalmeetingid',
+                array_keys($internalmeetingids),
+                '',
+                'id, internalmeetingid'
+            ),
+            null,
+            'internalmeetingid'
+        );
+
+    if (count($existingmeetings) !== count($internalmeetingids)) {
+        return true;
+    }
+
+    $meetingidmap = [];
+    foreach ($legacymeetings as $legacymeeting) {
+        $internalmeetingid = trim((string) ($legacymeeting->internalmeetingid ?? ''));
+        if ($internalmeetingid === '' || !isset($existingmeetings[$internalmeetingid])) {
+            return true;
+        }
+        $meetingidmap[(int) $legacymeeting->id] = (int) $existingmeetings[$internalmeetingid]->id;
+    }
+
+    $legacyusers = $DB->get_records(bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user'));
+    if (empty($legacyusers)) {
+        return false;
+    }
+
+    $targetmeetingids = array_values(array_unique(array_map('intval', $meetingidmap)));
+    $existingbymeeting = [];
+    if (!empty($targetmeetingids)) {
+        [$insql, $inparams] = $DB->get_in_or_equal($targetmeetingids, SQL_PARAMS_NAMED, 'mid');
+        $existingrows = $DB->get_records_select(
+            'bbbext_bnx_datahub_meeting_user',
+            "meetingid {$insql}",
+            $inparams,
+            '',
+            'id, meetingid, userid, fullname, timejoin'
+        );
+        foreach ($existingrows as $row) {
+            $mid = (int) $row->meetingid;
+            $existingbymeeting[$mid] ??= ['byuserid' => [], 'byfingerprint' => []];
+            if ((int) $row->userid > 0) {
+                $existingbymeeting[$mid]['byuserid'][(int) $row->userid] = (int) $row->id;
+            } else {
+                $fingerprint = $row->fullname . '|' . (int) $row->timejoin;
+                $existingbymeeting[$mid]['byfingerprint'][$fingerprint] = (int) $row->id;
+            }
+        }
+    }
+
+    foreach ($legacyusers as $legacyuser) {
+        $legacymeetingid = (int) ($legacyuser->meetingid ?? 0);
+        if (empty($meetingidmap[$legacymeetingid])) {
+            return true;
+        }
+
+        $meetingid = (int) $meetingidmap[$legacymeetingid];
+        $userid = isset($legacyuser->userid) ? (int) $legacyuser->userid : null;
+        $bucket = $existingbymeeting[$meetingid] ?? ['byuserid' => [], 'byfingerprint' => []];
+        if ($userid !== null && $userid > 0) {
+            if (!isset($bucket['byuserid'][$userid])) {
+                return true;
+            }
+        } else {
+            $fingerprint = (string) ($legacyuser->fullname ?? '') . '|' . (int) ($legacyuser->timejoin ?? 0);
+            if (!isset($bucket['byfingerprint'][$fingerprint])) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Return whether the legacy BN Reports sidecar is installed and enabled.
+ *
+ * @return bool
+ */
+function bbbext_bnx_datahub_has_bnreports_conflict(): bool {
+    $pm = \core_plugin_manager::instance();
+    $installed = $pm->get_installed_plugins('bbbext');
+
+    // PHPUnit installs DataHub without the optional legacy plugin's code. Its
+    // persisted version remains valid legacy-installation metadata in that case.
+    if (!isset($installed['bnreports']) && get_config('bbbext_bnreports', 'version') === false) {
+        return false;
+    }
+
+    return empty(get_config('bbbext_bnreports', 'disabled'));
+}
+
+/**
  * Setting keys that DataHub is willing to inherit from the legacy bbbext_bnreports
  * component during migration.
  *
@@ -351,17 +488,7 @@ function bbbext_bnx_datahub_ensure_bnx_record(int $moduleid, int $now, ?array &$
  * @return void
  */
 function bbbext_bnx_datahub_disable_if_bnreports_present(): void {
-    $pm = \core_plugin_manager::instance();
-    $installed = $pm->get_installed_plugins('bbbext');
-
-    // Nothing to resolve if the legacy sidecar is not installed at all.
-    if (!isset($installed['bnreports'])) {
-        return;
-    }
-
-    // If an administrator has already disabled the legacy sidecar, there is no conflict
-    // and DataHub is free to run; do not self-disable in that case.
-    if (!empty(get_config('bbbext_bnreports', 'disabled'))) {
+    if (!bbbext_bnx_datahub_has_bnreports_conflict()) {
         return;
     }
 

@@ -22,6 +22,8 @@ namespace bbbext_bnx_datahub;
  * @covers ::bbbext_bnx_datahub_migrate_bnreports_data
  * @covers ::bbbext_bnx_datahub_migrate_bnreports_settings
  * @covers ::bbbext_bnx_datahub_migratable_setting_keys
+ * @covers ::bbbext_bnx_datahub_has_bnreports_conflict
+ * @covers ::bbbext_bnx_datahub_has_pending_bnreports_migration
  * @covers ::bbbext_bnx_datahub_is_bnx_enabled
  * @covers ::bbbext_bnx_datahub_disable_if_bnx_unavailable
  * @covers ::bbbext_bnx_datahub_disable_if_bnreports_present
@@ -190,6 +192,17 @@ final class install_migration_test extends \advanced_testcase {
     }
 
     /**
+     * Legacy BN Reports metadata represents an active conflict when the sidecar is enabled.
+     */
+    public function test_bnreports_conflict_when_legacy_sidecar_is_enabled(): void {
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        set_config('disabled', 0, 'bbbext_bnreports');
+        \core_plugin_manager::reset_caches();
+
+        $this->assertTrue(bbbext_bnx_datahub_has_bnreports_conflict());
+    }
+
+    /**
      * When BNX is disabled, DataHub must self-disable and leave BNX untouched.
      */
     public function test_self_disable_when_bnx_disabled(): void {
@@ -275,6 +288,57 @@ final class install_migration_test extends \advanced_testcase {
             'userid' => $userid,
         ]);
         $this->assertSame(1, (int) $users);
+    }
+
+    /**
+     * The pending-migration validator should warn before migration and clear after migration.
+     */
+    public function test_pending_migration_validation(): void {
+        global $DB;
+
+        $this->create_legacy_bnreports_tables();
+
+        $course = $this->getDataGenerator()->create_course();
+        $bbb = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+
+        $legacymeetingid = (int) $DB->insert_record(bbbext_bnx_datahub_legacy_bnreports_table('_meeting'), (object) [
+            'bigbluebuttonbnid' => $bbb->id,
+            'externalmeetingid' => 'ext-pending-1',
+            'internalmeetingid' => 'int-pending-1',
+            'meetingname' => 'Pending meeting',
+            'timestart' => 1700002000,
+            'timeend' => 1700005600,
+            'duration' => 3600,
+            'metadata' => null,
+            'rawdata' => null,
+        ]);
+
+        $DB->insert_record(bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user'), (object) [
+            'meetingid' => $legacymeetingid,
+            'userid' => (int) $this->getDataGenerator()->create_user()->id,
+            'fullname' => 'Pending User',
+            'role' => 'viewer',
+            'timejoin' => 1700002100,
+            'timeleave' => 1700002400,
+            'elapsedtime' => 300,
+            'score' => 5,
+            'engchats' => 1,
+            'engtalks' => 0,
+            'engraisehand' => 0,
+            'engemojis' => 0,
+            'engpollvotes' => 0,
+            'engtalktime' => 0,
+            'rawdata' => null,
+        ]);
+
+        set_config('version', '2024110600', 'bbbext_bnreports');
+        \core_plugin_manager::reset_caches();
+
+        $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+
+        bbbext_bnx_datahub_migrate_bnreports_data();
+
+        $this->assertFalse(bbbext_bnx_datahub_has_pending_bnreports_migration());
     }
 
     /**
