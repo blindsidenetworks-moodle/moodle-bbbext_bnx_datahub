@@ -25,6 +25,30 @@ namespace bbbext_bnx_datahub;
  */
 class observer {
     /**
+     * Prevent DataHub from remaining enabled when BNX is unavailable.
+     *
+     * @param \core\event\config_log_created $event
+     * @return void
+     */
+    public static function config_log_created(\core\event\config_log_created $event): void {
+        $other = $event->other ?? [];
+
+        if (($other['name'] ?? '') !== 'disabled'
+                || ($other['plugin'] ?? '') !== 'bbbext_bnx_datahub'
+                || (int)($other['value'] ?? 0) === 1) {
+            return;
+        }
+
+        require_once(__DIR__ . '/../db/migration.php');
+        if (bbbext_bnx_datahub_is_bnx_enabled()) {
+            return;
+        }
+
+        bbbext_bnx_datahub_disable_if_bnx_unavailable();
+        \core\notification::error(get_string('check_bnx_enabled_enable_error', 'bbbext_bnx_datahub'));
+    }
+
+    /**
      * Self-disable DataHub when BNX publishes a disabled transition.
      *
      * DataHub never toggles BNX; it only writes its own disabled flag in

@@ -77,7 +77,8 @@ final class meetingevents_enablement_test extends \advanced_testcase {
     }
 
     /**
-     * The legacy cross-plugin auto-enable hook must remain removed.
+     * The legacy cross-plugin auto-enable hook must remain removed while the
+     * local DataHub enablement guard may observe its own config event.
      *
      * @coversNothing
      */
@@ -90,9 +91,9 @@ final class meetingevents_enablement_test extends \advanced_testcase {
         $eventsfile = __DIR__ . '/../db/events.php';
         $this->assertFileExists($eventsfile);
         $this->assertStringNotContainsString(
-            'config_log_created',
+            'plugininfo_callbacks',
             (string) file_get_contents($eventsfile),
-            'DataHub must not restore the old config_log_created cross-plugin auto-enable observer.'
+            'DataHub must not restore the old plugininfo_callbacks cross-plugin auto-enable observer.'
         );
     }
 
@@ -107,6 +108,24 @@ final class meetingevents_enablement_test extends \advanced_testcase {
         set_config('version', '2026060200', 'bbbext_bnx');
         set_config('disabled', 1, 'bbbext_bnx');
         \core_plugin_manager::reset_caches();
+
+        $check = new \bbbext_bnx_datahub\check\bnx_enabled();
+        $result = $check->get_result();
+
+        $this->assertSame(\core\check\result::WARNING, $result->get_status());
+    }
+
+    /**
+     * The BNX prerequisite check warns when BNX is not installed.
+     *
+     * @covers \bbbext_bnx_datahub\check\bnx_enabled
+     */
+    public function test_bnx_status_check_warns_when_bnx_is_uninstalled(): void {
+        $this->resetAfterTest(true);
+
+        unset_config('version', 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx');
+        \core\plugin_manager::reset_caches();
 
         $check = new \bbbext_bnx_datahub\check\bnx_enabled();
         $result = $check->get_result();
@@ -154,6 +173,60 @@ final class meetingevents_enablement_test extends \advanced_testcase {
             'other' => ['enabled' => false],
         ]);
         \bbbext_bnx_datahub\observer::bnx_state_changed($event);
+
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+    }
+
+    /**
+     * Enabling DataHub must be reverted when BNX is disabled.
+     *
+     * @covers \bbbext_bnx_datahub\observer::config_log_created
+     */
+    public function test_enabling_datahub_is_blocked_when_bnx_is_disabled(): void {
+        $this->resetAfterTest(true);
+
+        set_config('version', '2026060200', 'bbbext_bnx');
+        set_config('disabled', 1, 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core\plugin_manager::reset_caches();
+
+        $event = \core\event\config_log_created::create([
+            'context' => \context_system::instance(),
+            'other' => [
+                'name' => 'disabled',
+                'plugin' => 'bbbext_bnx_datahub',
+                'oldvalue' => '1',
+                'value' => '0',
+            ],
+        ]);
+        \bbbext_bnx_datahub\observer::config_log_created($event);
+
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+    }
+
+    /**
+     * Enabling DataHub must be reverted when BNX is not installed.
+     *
+     * @covers \bbbext_bnx_datahub\observer::config_log_created
+     */
+    public function test_enabling_datahub_is_blocked_when_bnx_is_uninstalled(): void {
+        $this->resetAfterTest(true);
+
+        unset_config('version', 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core\plugin_manager::reset_caches();
+
+        $event = \core\event\config_log_created::create([
+            'context' => \context_system::instance(),
+            'other' => [
+                'name' => 'disabled',
+                'plugin' => 'bbbext_bnx_datahub',
+                'oldvalue' => '1',
+                'value' => '0',
+            ],
+        ]);
+        \bbbext_bnx_datahub\observer::config_log_created($event);
 
         $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
     }

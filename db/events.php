@@ -27,6 +27,10 @@ defined('MOODLE_INTERNAL') || die();
 
 $observers = [
     [
+        'eventname' => '\\core\\event\\config_log_created',
+        'callback' => '\\bbbext_bnx_datahub\\observer::config_log_created',
+    ],
+    [
         'eventname' => '\\bbbext_bnx\\event\\state_changed',
         'callback' => '\\bbbext_bnx_datahub\\observer::bnx_state_changed',
     ],
