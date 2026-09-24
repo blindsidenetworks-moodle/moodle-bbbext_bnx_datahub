@@ -1,0 +1,63 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template bbbext_bnx_datahub/dashboard
+
+    The standalone DataHub activity dashboard.
+}}
+<section class="bbbext-bnx-datahub-dashboard" aria-labelledby="bbbext-bnx-datahub-dashboard-title">
+    <header class="bbbext-bnx-datahub-dashboard__header">
+        <div>
+            <h2 id="bbbext-bnx-datahub-dashboard-title">{{title}}</h2>
+            <p>{{intro}}</p>
+        </div>
+        <nav class="bbbext-bnx-datahub-dashboard__actions" aria-label="{{title}}">
+            <a class="btn btn-outline-primary" href="{{attendanceurl}}">{{attendanceaction}}</a>
+            <a class="btn btn-primary" href="{{engagementurl}}">{{engagementaction}}</a>
+        </nav>
+    </header>
+
+    {{#hasdata}}
+        <div class="bbbext-bnx-datahub-dashboard__metrics">
+            {{#metrics}}
+                <div class="bbbext-bnx-datahub-dashboard__metric">
+                    <span class="bbbext-bnx-datahub-dashboard__metric-value">{{value}}</span>
+                    <span class="bbbext-bnx-datahub-dashboard__metric-label">{{label}}</span>
+                </div>
+            {{/metrics}}
+        </div>
+
+        <div class="bbbext-bnx-datahub-dashboard__charts">
+            <section class="bbbext-bnx-datahub-dashboard__chart" aria-label="{{attendanceaction}}">
+                {{{attendancechart}}}
+            </section>
+            <section class="bbbext-bnx-datahub-dashboard__chart" aria-label="{{engagementaction}}">
+                {{{engagementchart}}}
+            </section>
+            <section class="bbbext-bnx-datahub-dashboard__chart bbbext-bnx-datahub-dashboard__chart--wide">
+                {{{learnerchart}}}
+            </section>
+        </div>
+    {{/hasdata}}
+
+    {{^hasdata}}
+        <div class="alert alert-info" role="status">
+            <h3>{{emptytitle}}</h3>
+            <p class="mb-0">{{emptytext}}</p>
+        </div>
+    {{/hasdata}}
+</section>
