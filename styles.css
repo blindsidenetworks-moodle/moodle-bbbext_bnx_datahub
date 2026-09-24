@@ -64,6 +64,26 @@
     min-width: 0;
 }
 
+.bbbext-bnx-datahub-dashboard__chart .chart-area {
+    min-width: 0;
+    width: 100%;
+}
+
+.bbbext-bnx-datahub-dashboard__chart .chart-area .chart-image {
+    height: 320px;
+    max-width: 100%;
+    width: 100%;
+}
+
+.bbbext-bnx-datahub-dashboard__chart .chart-table-data {
+    overflow-x: auto;
+}
+
+.bbbext-bnx-datahub-dashboard__chart .chart-table {
+    position: relative;
+    z-index: 1;
+}
+
 .bbbext-bnx-datahub-dashboard__chart--wide {
     grid-column: 1 / -1;
 }
@@ -123,6 +143,10 @@
 
     .bbbext-bnx-datahub-dashboard__chart--wide {
         grid-column: auto;
+    }
+
+    .bbbext-bnx-datahub-dashboard__chart .chart-area .chart-image {
+        height: 260px;
     }
 
     .bbbext-bnx-datahub-dashboard__session-header {
