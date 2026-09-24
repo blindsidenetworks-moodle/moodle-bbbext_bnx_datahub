@@ -98,8 +98,83 @@ class dashboard implements renderable, templatable {
         $data->attendancechart = $output->render($this->attendance_chart());
         $data->engagementchart = $output->render($this->engagement_chart());
         $data->learnerchart = $output->render($this->learner_chart());
+        $data->sessiontitle = get_string('dashboard:sessionoverview', 'bbbext_bnx_datahub');
+        $data->sessionselectorlabel = get_string('dashboard:selectsession', 'bbbext_bnx_datahub');
+        $data->sessionselectaction = get_string('dashboard:show', 'bbbext_bnx_datahub');
+        $data->cmid = $this->cmid;
+        $data->sessions = array_map(function (\stdClass $session): \stdClass {
+            return (object) [
+                'id' => $session->id,
+                'label' => $session->label,
+                'selected' => $session->id === (int) $this->data->selectedmeeting->id,
+            ];
+        }, array_reverse($this->data->sessions));
+        $data->selectedsession = (object) [
+            'name' => format_string($this->data->selectedmeeting->meetingname),
+            'date' => userdate((int) $this->data->selectedmeeting->timestart),
+            'duration' => format_time((int) $this->data->selectedmeeting->duration),
+        ];
+        $data->sessionmetrics = $this->session_metrics();
+        $data->attendeecolumns = [
+            'learner' => get_string('dashboard:learner', 'bbbext_bnx_datahub'),
+            'attendance' => get_string('dashboard:attendance', 'bbbext_bnx_datahub'),
+            'talktime' => get_string('attendee:engtalktime', 'bbbext_bnx_datahub'),
+            'messages' => get_string('attendee:engchats', 'bbbext_bnx_datahub'),
+            'reactions' => get_string('attendee:engemojis', 'bbbext_bnx_datahub'),
+            'raisedhands' => get_string('attendee:engraisehand', 'bbbext_bnx_datahub'),
+            'pollvotes' => get_string('attendee:engpollvotes', 'bbbext_bnx_datahub'),
+            'score' => get_string('attendee:score', 'bbbext_bnx_datahub'),
+        ];
+        $data->attendees = array_map(static function (\stdClass $learner): \stdClass {
+            return (object) [
+                'fullname' => $learner->fullname,
+                'attendance' => format_time($learner->elapsedtime),
+                'talktime' => format_time($learner->talktime),
+                'messages' => $learner->chats,
+                'reactions' => $learner->emojis,
+                'raisedhands' => $learner->raisedhands,
+                'pollvotes' => $learner->pollvotes,
+                'score' => $learner->score,
+            ];
+        }, $this->data->selectedlearners);
+        $data->hasattendees = !empty($data->attendees);
+        $data->noattendees = get_string('dashboard:noattendees', 'bbbext_bnx_datahub');
 
         return $data;
+    }
+
+    /**
+     * Build selected-session KPI values.
+     *
+     * @return \stdClass[] Session KPI values.
+     */
+    private function session_metrics(): array {
+        $metrics = $this->data->selectedmetrics;
+        $scores = array_column($this->data->selectedlearners, 'score');
+        $averagescore = empty($scores) ? 0 : (int) round(array_sum($scores) / count($scores));
+
+        return [
+            (object) [
+                'label' => get_string('dashboard:participants', 'bbbext_bnx_datahub'),
+                'value' => $metrics->learnercount,
+            ],
+            (object) [
+                'label' => get_string('dashboard:activityscore', 'bbbext_bnx_datahub'),
+                'value' => $averagescore,
+            ],
+            (object) [
+                'label' => get_string('dashboard:medianattendance', 'bbbext_bnx_datahub'),
+                'value' => format_time($metrics->medianattendance),
+            ],
+            (object) [
+                'label' => get_string('attendee:engchats', 'bbbext_bnx_datahub'),
+                'value' => $metrics->chats,
+            ],
+            (object) [
+                'label' => get_string('attendee:engpollvotes', 'bbbext_bnx_datahub'),
+                'value' => $metrics->pollvotes,
+            ],
+        ];
     }
 
     /**
@@ -151,11 +226,16 @@ class dashboard implements renderable, templatable {
      * @return chart_bar Learner participation chart.
      */
     private function learner_chart(): chart_bar {
+        $learners = array_slice(
+            $this->data->selectedlearners,
+            0,
+            \bbbext_bnx_datahub\local\services\dashboard_service::LATEST_SESSION_LEARNER_LIMIT
+        );
         $chart = new chart_bar();
         $chart->set_horizontal(true);
         $chart->set_stacked(true);
         $chart->set_title(get_string('dashboard:learnerchart', 'bbbext_bnx_datahub'));
-        $chart->set_labels(array_map(static fn(\stdClass $learner): string => $learner->fullname, $this->data->latestlearners));
+        $chart->set_labels(array_map(static fn(\stdClass $learner): string => $learner->fullname, $learners));
 
         foreach ([
             'chats' => 'attendee:engchats',
@@ -165,7 +245,7 @@ class dashboard implements renderable, templatable {
         ] as $metric => $label) {
             $chart->add_series(new chart_series(
                 get_string($label, 'bbbext_bnx_datahub'),
-                array_map(static fn(\stdClass $learner): int => $learner->{$metric}, $this->data->latestlearners)
+                array_map(static fn(\stdClass $learner): int => $learner->{$metric}, $learners)
             ));
         }
 

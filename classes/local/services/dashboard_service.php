@@ -31,9 +31,10 @@ class dashboard_service {
      * Return dashboard data for a BigBlueButton course module.
      *
      * @param int $cmid Course module ID.
+     * @param int $selectedmeetingid Selected DataHub meeting ID, or zero for the latest meeting.
      * @return \stdClass Dashboard aggregate data.
      */
-    public static function get_by_cmid(int $cmid): \stdClass {
+    public static function get_by_cmid(int $cmid, int $selectedmeetingid = 0): \stdClass {
         global $DB;
 
         $meetings = meeting_service::get_all_by_cmid($cmid);
@@ -47,7 +48,7 @@ class dashboard_service {
             'meetingid',
             $meetingids,
             '',
-            'id, meetingid, userid, fullname, attendeerole, elapsedtime, engchats, engtalks, '
+            'id, meetingid, userid, fullname, attendeerole, elapsedtime, attendeescore, engchats, engtalks, '
                 . 'engraisehand, engemojis, engpollvotes, engtalktime'
         );
 
@@ -104,8 +105,8 @@ class dashboard_service {
             ];
         }
 
-        $latestmeeting = reset($meetings);
-        $latestlearners = self::latest_session_learners($learnersbymeeting[(int) $latestmeeting->id]);
+        $selectedmeeting = self::select_meeting($meetings, $selectedmeetingid);
+        $selectedlearners = self::session_learners($learnersbymeeting[(int) $selectedmeeting->id]);
 
         return (object) [
             'hasdata' => true,
@@ -115,8 +116,11 @@ class dashboard_service {
             'pollparticipantcount' => count($pollparticipants),
             'metrics' => (object) $metrics,
             'sessions' => $sessions,
-            'latestmeeting' => $latestmeeting,
-            'latestlearners' => $latestlearners,
+            'selectedmeeting' => $selectedmeeting,
+            'selectedmetrics' => self::session_metrics($selectedlearners),
+            'selectedlearners' => $selectedlearners,
+            'latestmeeting' => $selectedmeeting,
+            'latestlearners' => $selectedlearners,
         ];
     }
 
@@ -141,6 +145,9 @@ class dashboard_service {
                 'talktime' => 0,
             ],
             'sessions' => [],
+            'selectedmeeting' => null,
+            'selectedmetrics' => null,
+            'selectedlearners' => [],
             'latestmeeting' => null,
             'latestlearners' => [],
         ];
@@ -178,18 +185,46 @@ class dashboard_service {
     }
 
     /**
-     * Return the most active learners from the latest meeting.
+     * Return the requested meeting when it belongs to this activity, or the latest meeting.
      *
-     * @param \stdClass[] $learners Latest meeting learner rows.
-     * @return \stdClass[] Chart-ready learner summaries.
+     * @param \stdClass[] $meetings Activity meeting rows ordered newest first.
+     * @param int $selectedmeetingid Requested meeting ID.
+     * @return \stdClass Selected meeting row.
      */
-    private static function latest_session_learners(array $learners): array {
+    private static function select_meeting(array $meetings, int $selectedmeetingid): \stdClass {
+        if ($selectedmeetingid > 0) {
+            foreach ($meetings as $meeting) {
+                if ((int) $meeting->id === $selectedmeetingid) {
+                    $meeting->id = (int) $meeting->id;
+                    return $meeting;
+                }
+            }
+        }
+
+        $meeting = reset($meetings);
+        $meeting->id = (int) $meeting->id;
+
+        return $meeting;
+    }
+
+    /**
+     * Return the most active learners from the selected meeting.
+     *
+     * @param \stdClass[] $learners Selected meeting learner rows.
+     * @return \stdClass[] Dashboard learner summaries.
+     */
+    private static function session_learners(array $learners): array {
         $summaries = array_map(static function (\stdClass $learner): \stdClass {
             return (object) [
+                'userid' => (int) $learner->userid,
                 'fullname' => $learner->fullname,
+                'elapsedtime' => (int) $learner->elapsedtime,
+                'score' => (int) $learner->attendeescore,
                 'chats' => (int) $learner->engchats,
                 'talks' => (int) $learner->engtalks,
+                'talktime' => (int) $learner->engtalktime,
                 'raisedhands' => (int) $learner->engraisehand,
+                'emojis' => (int) $learner->engemojis,
                 'pollvotes' => (int) $learner->engpollvotes,
             ];
         }, $learners);
@@ -201,6 +236,38 @@ class dashboard_service {
             return $righttotal <=> $lefttotal ?: strcasecmp($left->fullname, $right->fullname);
         });
 
-        return array_slice($summaries, 0, self::LATEST_SESSION_LEARNER_LIMIT);
+        return $summaries;
+    }
+
+    /**
+     * Calculate selected-session summary metrics.
+     *
+     * @param \stdClass[] $learners Selected meeting learner summaries.
+     * @return \stdClass Session metrics.
+     */
+    private static function session_metrics(array $learners): \stdClass {
+        $metrics = (object) [
+            'learnercount' => count($learners),
+            'medianattendance' => self::median(array_column($learners, 'elapsedtime')),
+            'pollparticipantcount' => 0,
+            'chats' => 0,
+            'talks' => 0,
+            'talktime' => 0,
+            'raisedhands' => 0,
+            'emojis' => 0,
+            'pollvotes' => 0,
+        ];
+
+        foreach ($learners as $learner) {
+            $metrics->pollparticipantcount += $learner->pollvotes > 0 ? 1 : 0;
+            $metrics->chats += $learner->chats;
+            $metrics->talks += $learner->talks;
+            $metrics->talktime += $learner->talktime;
+            $metrics->raisedhands += $learner->raisedhands;
+            $metrics->emojis += $learner->emojis;
+            $metrics->pollvotes += $learner->pollvotes;
+        }
+
+        return $metrics;
     }
 }

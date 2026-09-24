@@ -68,6 +68,48 @@
     grid-column: 1 / -1;
 }
 
+.bbbext-bnx-datahub-dashboard__session {
+    border-top: 1px solid var(--bs-border-color, #dee2e6);
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+}
+
+.bbbext-bnx-datahub-dashboard__session-header {
+    align-items: flex-end;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+.bbbext-bnx-datahub-dashboard__selector {
+    align-items: flex-end;
+    display: grid;
+    flex-shrink: 0;
+    gap: 0.5rem;
+    grid-template-columns: minmax(12rem, 1fr) auto;
+}
+
+.bbbext-bnx-datahub-dashboard__selector label {
+    font-weight: 600;
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+}
+
+.bbbext-bnx-datahub-dashboard__metrics--session {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bbbext-bnx-datahub-dashboard__attendees {
+    min-width: 780px;
+}
+
+.bbbext-bnx-datahub-dashboard__attendees th,
+.bbbext-bnx-datahub-dashboard__attendees td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
 @media (max-width: 767px) {
     .bbbext-bnx-datahub-dashboard__header {
         align-items: stretch;
@@ -81,5 +123,15 @@
 
     .bbbext-bnx-datahub-dashboard__chart--wide {
         grid-column: auto;
+    }
+
+    .bbbext-bnx-datahub-dashboard__session-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .bbbext-bnx-datahub-dashboard__selector {
+        grid-template-columns: minmax(0, 1fr) auto;
+        width: 100%;
     }
 }

@@ -48,9 +48,16 @@ the system report factory for fixed activity-facing reports. Add a new metric by
 updating the schema/upgrade path, ingestion mapping, entity column, datasource,
 privacy export, and appropriate tests as one feature.
 
-`navigation_append_addon` adds report links only when prerequisites are met and
-the viewer has `bbbext/bnx_datahub:viewreports`. Navigation is a convenience,
-not an authorization boundary; endpoints must enforce access themselves.
+The activity navigation exposes the DataHub dashboard only when prerequisites
+are met and the viewer has `bbbext/bnx_datahub:viewreports`. The dashboard shows
+cross-session charts and a selectable post-session attendee overview using the
+metrics already persisted by DataHub. Attendance and engagement Report Builder
+pages remain available as detailed views from the dashboard.
+
+The optional `meetingid` dashboard parameter is accepted only when the meeting
+belongs to the current BigBlueButton activity; invalid IDs fall back to its most
+recent meeting. Navigation is a convenience, not an authorization boundary;
+all dashboard and report endpoints must enforce access themselves.
 
 ## Sidecar contract and status checks
 

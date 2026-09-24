@@ -25,6 +25,7 @@
 require(__DIR__ . '/../../../../config.php');
 
 $cmid = required_param('cmid', PARAM_INT);
+$meetingid = optional_param('meetingid', 0, PARAM_INT);
 $cm = get_coursemodule_from_id('bigbluebuttonbn', $cmid, 0, false, MUST_EXIST);
 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
 $bigbluebuttonbn = $DB->get_record('bigbluebuttonbn', ['id' => $cm->instance], '*', MUST_EXIST);
@@ -35,13 +36,16 @@ require_capability('bbbext/bnx_datahub:viewreports', $context);
 
 $PAGE->set_context($context);
 $PAGE->set_cm($cm);
-$PAGE->set_url(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/dashboard.php', ['cmid' => $cm->id]));
+$PAGE->set_url(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/dashboard.php', [
+    'cmid' => $cm->id,
+    'meetingid' => $meetingid,
+]));
 $PAGE->set_title(format_string($bigbluebuttonbn->name, true, ['context' => $context])
     . ' - ' . get_string('dashboard', 'bbbext_bnx_datahub'));
 $PAGE->set_heading(format_string($course->fullname, true, ['context' => $context]));
 $PAGE->requires->css(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/styles.css'));
 
-$data = \bbbext_bnx_datahub\local\services\dashboard_service::get_by_cmid((int) $cm->id);
+$data = \bbbext_bnx_datahub\local\services\dashboard_service::get_by_cmid((int) $cm->id, $meetingid);
 $dashboard = new \bbbext_bnx_datahub\output\dashboard($data, $cm->id);
 
 echo $OUTPUT->header();

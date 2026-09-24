@@ -52,6 +52,76 @@
                 {{{learnerchart}}}
             </section>
         </div>
+
+        <section class="bbbext-bnx-datahub-dashboard__session" aria-labelledby="bbbext-bnx-datahub-session-title">
+            <div class="bbbext-bnx-datahub-dashboard__session-header">
+                <div>
+                    <h3 id="bbbext-bnx-datahub-session-title">{{sessiontitle}}</h3>
+                    <p class="mb-0">
+                        <strong>{{selectedsession.name}}</strong>
+                        <span aria-hidden="true">&middot;</span>
+                        {{selectedsession.date}}
+                        <span aria-hidden="true">&middot;</span>
+                        {{selectedsession.duration}}
+                    </p>
+                </div>
+                <form method="get" action="dashboard.php" class="bbbext-bnx-datahub-dashboard__selector">
+                    <input type="hidden" name="cmid" value="{{cmid}}">
+                    <label for="bbbext-bnx-datahub-meeting">{{sessionselectorlabel}}</label>
+                    <select id="bbbext-bnx-datahub-meeting" name="meetingid" class="form-select">
+                        {{#sessions}}
+                            <option value="{{id}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                        {{/sessions}}
+                    </select>
+                    <button type="submit" class="btn btn-secondary">{{sessionselectaction}}</button>
+                </form>
+            </div>
+
+            <div class="bbbext-bnx-datahub-dashboard__metrics bbbext-bnx-datahub-dashboard__metrics--session">
+                {{#sessionmetrics}}
+                    <div class="bbbext-bnx-datahub-dashboard__metric">
+                        <span class="bbbext-bnx-datahub-dashboard__metric-value">{{value}}</span>
+                        <span class="bbbext-bnx-datahub-dashboard__metric-label">{{label}}</span>
+                    </div>
+                {{/sessionmetrics}}
+            </div>
+
+            {{#hasattendees}}
+                <div class="table-responsive">
+                    <table class="table table-hover bbbext-bnx-datahub-dashboard__attendees">
+                        <thead>
+                            <tr>
+                                <th scope="col">{{attendeecolumns.learner}}</th>
+                                <th scope="col">{{attendeecolumns.attendance}}</th>
+                                <th scope="col">{{attendeecolumns.talktime}}</th>
+                                <th scope="col">{{attendeecolumns.messages}}</th>
+                                <th scope="col">{{attendeecolumns.reactions}}</th>
+                                <th scope="col">{{attendeecolumns.raisedhands}}</th>
+                                <th scope="col">{{attendeecolumns.pollvotes}}</th>
+                                <th scope="col">{{attendeecolumns.score}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#attendees}}
+                                <tr>
+                                    <th scope="row">{{fullname}}</th>
+                                    <td>{{attendance}}</td>
+                                    <td>{{talktime}}</td>
+                                    <td>{{messages}}</td>
+                                    <td>{{reactions}}</td>
+                                    <td>{{raisedhands}}</td>
+                                    <td>{{pollvotes}}</td>
+                                    <td>{{score}}</td>
+                                </tr>
+                            {{/attendees}}
+                        </tbody>
+                    </table>
+                </div>
+            {{/hasattendees}}
+            {{^hasattendees}}
+                <div class="alert alert-info mb-0" role="status">{{noattendees}}</div>
+            {{/hasattendees}}
+        </section>
     {{/hasdata}}
 
     {{^hasdata}}

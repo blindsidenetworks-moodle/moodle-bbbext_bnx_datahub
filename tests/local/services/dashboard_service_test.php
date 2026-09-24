@@ -111,7 +111,7 @@ final class dashboard_service_test extends advanced_testcase {
             'timejoin' => 100,
             'timeleave' => 100 + $elapsedtime,
             'elapsedtime' => $elapsedtime,
-            'attendeescore' => 0,
+            'attendeescore' => 42,
             'engchats' => 2,
             'engtalks' => 3,
             'engraisehand' => 1,
@@ -161,5 +161,26 @@ final class dashboard_service_test extends advanced_testcase {
         $this->assertSame($latestmeeting->id, $data->sessions[1]->id);
         $this->assertCount(2, $data->latestlearners);
         $this->assertSame('User 10', $data->latestlearners[0]->fullname);
+        $this->assertSame($latestmeeting->id, $data->selectedmeeting->id);
+        $this->assertSame(2, $data->selectedmetrics->learnercount);
+        $this->assertSame(2100, $data->selectedmetrics->medianattendance);
+        $this->assertSame(42, $data->selectedlearners[0]->score);
+    }
+
+    /**
+     * A meeting can be selected only when it belongs to the activity.
+     */
+    public function test_get_by_cmid_selects_activity_meeting(): void {
+        $oldermeeting = $this->insert_meeting(1000);
+        $latestmeeting = $this->insert_meeting(2000);
+        $this->insert_attendee($oldermeeting->id, 10, 'viewer', 1200, 1);
+        $this->insert_attendee($latestmeeting->id, 12, 'viewer', 2400, 0);
+
+        $selected = dashboard_service::get_by_cmid($this->cmid, (int) $oldermeeting->id);
+        $invalid = dashboard_service::get_by_cmid($this->cmid, 999999);
+
+        $this->assertSame($oldermeeting->id, $selected->selectedmeeting->id);
+        $this->assertSame('User 10', $selected->selectedlearners[0]->fullname);
+        $this->assertSame($latestmeeting->id, $invalid->selectedmeeting->id);
     }
 }

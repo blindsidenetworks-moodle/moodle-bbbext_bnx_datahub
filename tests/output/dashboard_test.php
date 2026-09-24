@@ -65,15 +65,36 @@ final class dashboard_test extends advanced_testcase {
                 'talktime' => 120,
             ],
             'sessions' => [
-                (object) ['label' => '1 Jan 2026', 'learnercount' => 2],
-                (object) ['label' => '2 Jan 2026', 'learnercount' => 3],
+                (object) ['id' => 1, 'label' => '1 Jan 2026', 'learnercount' => 2],
+                (object) ['id' => 2, 'label' => '2 Jan 2026', 'learnercount' => 3],
             ],
-            'latestlearners' => [
+            'selectedmeeting' => (object) [
+                'id' => 2,
+                'meetingname' => 'Session two',
+                'timestart' => 2000,
+                'duration' => 3600,
+            ],
+            'selectedmetrics' => (object) [
+                'learnercount' => 1,
+                'medianattendance' => 1800,
+                'pollparticipantcount' => 1,
+                'chats' => 4,
+                'talks' => 2,
+                'talktime' => 120,
+                'raisedhands' => 1,
+                'emojis' => 3,
+                'pollvotes' => 2,
+            ],
+            'selectedlearners' => [
                 (object) [
                     'fullname' => 'Ada Lovelace',
+                    'elapsedtime' => 1800,
+                    'score' => 42,
                     'chats' => 4,
                     'talks' => 2,
+                    'talktime' => 120,
                     'raisedhands' => 1,
+                    'emojis' => 3,
                     'pollvotes' => 2,
                 ],
             ],
@@ -85,5 +106,9 @@ final class dashboard_test extends advanced_testcase {
         $this->assertNotEmpty($data->attendancechart);
         $this->assertNotEmpty($data->engagementchart);
         $this->assertNotEmpty($data->learnerchart);
+        $this->assertCount(5, $data->sessionmetrics);
+        $this->assertCount(1, $data->attendees);
+        $this->assertSame('Ada Lovelace', $data->attendees[0]->fullname);
+        $this->assertTrue($data->sessions[0]->selected);
     }
 }
