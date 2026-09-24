@@ -197,6 +197,9 @@ final class attendance_report_test extends advanced_testcase {
         );
 
         $this->assertInstanceOf(attendance::class, $report);
+        [$where, $params] = $report->get_base_condition();
+        $this->assertStringContainsString('bbbextbnx.bigbluebuttonbnid', $where);
+        $this->assertContains((int) $bbb->id, $params);
     }
 
     /**

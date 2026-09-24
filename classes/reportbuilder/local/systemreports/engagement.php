@@ -45,8 +45,10 @@ class engagement extends system_report {
         // Define report structure first so filters can be applied.
         $this->setup_report_structure();
 
-        // Determine the BigBlueButton instance ID.
-        $bigbluebuttonbnid = $this->get_parameter('bigbluebuttonbnid', 0, PARAM_INT);
+        $bigbluebuttonbnid = $this->get_bigbluebuttonbnid();
+        if ($bigbluebuttonbnid) {
+            $this->add_base_condition_simple(self::BNX_ALIAS . '.bigbluebuttonbnid', $bigbluebuttonbnid);
+        }
 
         // Compute default filters.
         $defaults = $this->get_default_filter_values();
@@ -169,6 +171,24 @@ class engagement extends system_report {
      * @return array
      */
     protected function get_default_filter_values(): array {
+        $bigbluebuttonbnid = $this->get_bigbluebuttonbnid();
+
+        if ($bigbluebuttonbnid) {
+            return [
+                'room:id_operator' => \core_reportbuilder\local\filters\select::EQUAL_TO,
+                'room:id_value' => (string) $bigbluebuttonbnid,
+            ];
+        }
+
+        return [];
+    }
+
+    /**
+     * Return the BigBlueButton activity ID for this report.
+     *
+     * @return int Activity instance ID, or zero for a site-wide report.
+     */
+    private function get_bigbluebuttonbnid(): int {
         $bigbluebuttonbnid = 0;
         // Prefer the module context when available (also works in AJAX).
         $ctx = $this->get_context();
@@ -184,13 +204,6 @@ class engagement extends system_report {
             $bigbluebuttonbnid = (int) $this->get_parameter('bigbluebuttonbnid', 0, PARAM_INT);
         }
 
-        if ($bigbluebuttonbnid) {
-            return [
-                'room:id_operator' => \core_reportbuilder\local\filters\select::EQUAL_TO,
-                'room:id_value' => (string)$bigbluebuttonbnid,
-            ];
-        }
-
-        return [];
+        return $bigbluebuttonbnid;
     }
 }
