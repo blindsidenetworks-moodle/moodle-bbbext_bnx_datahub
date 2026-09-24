@@ -106,9 +106,10 @@ final class dashboard_test extends advanced_testcase {
         $this->assertNotEmpty($data->attendancechart);
         $this->assertNotEmpty($data->engagementchart);
         $this->assertNotEmpty($data->learnerchart);
-        $this->assertCount(5, $data->sessionmetrics);
-        $this->assertCount(1, $data->attendees);
-        $this->assertSame('Ada Lovelace', $data->attendees[0]->fullname);
-        $this->assertTrue($data->sessions[0]->selected);
+        $this->assertCount(5, $data->session->sessionmetrics);
+        $this->assertCount(1, $data->session->attendees);
+        $this->assertSame('Ada Lovelace', $data->session->attendees[0]->fullname);
+        $this->assertTrue($data->session->sessions[0]->selected);
+        $this->assertStringContainsString('session.php?cmid=42', $data->session->sessionfragmenturl);
     }
 }

@@ -98,10 +98,26 @@ class dashboard implements renderable, templatable {
         $data->attendancechart = $output->render($this->attendance_chart());
         $data->engagementchart = $output->render($this->engagement_chart());
         $data->learnerchart = $output->render($this->learner_chart());
+        $data->session = $this->export_session_for_template();
+
+        return $data;
+    }
+
+    /**
+     * Export selected-session data for the session overview fragment.
+     *
+     * @return \stdClass Template data.
+     */
+    public function export_session_for_template(): \stdClass {
+        $data = (object) [];
         $data->sessiontitle = get_string('dashboard:sessionoverview', 'bbbext_bnx_datahub');
         $data->sessionselectorlabel = get_string('dashboard:selectsession', 'bbbext_bnx_datahub');
         $data->sessionselectaction = get_string('dashboard:show', 'bbbext_bnx_datahub');
         $data->cmid = $this->cmid;
+        $data->sessionfragmenturl = (new moodle_url(
+            '/mod/bigbluebuttonbn/extension/bnx_datahub/session.php',
+            ['cmid' => $this->cmid]
+        ))->out(false);
         $data->sessions = array_map(function (\stdClass $session): \stdClass {
             return (object) [
                 'id' => $session->id,

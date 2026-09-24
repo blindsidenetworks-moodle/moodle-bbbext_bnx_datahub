@@ -44,6 +44,7 @@ $PAGE->set_title(format_string($bigbluebuttonbn->name, true, ['context' => $cont
     . ' - ' . get_string('dashboard', 'bbbext_bnx_datahub'));
 $PAGE->set_heading(format_string($course->fullname, true, ['context' => $context]));
 $PAGE->requires->css(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/styles.css'));
+$PAGE->requires->js_call_amd('bbbext_bnx_datahub/session_selector', 'init');
 
 $data = \bbbext_bnx_datahub\local\services\dashboard_service::get_by_cmid((int) $cm->id, $meetingid);
 $dashboard = new \bbbext_bnx_datahub\output\dashboard($data, $cm->id);
