@@ -25,7 +25,7 @@ use mod_bigbluebuttonbn\local\extension\navigation_append_addon as navigation_ap
 /**
  * Append implementation for the bbbext_bnx_datahub subplugin.
  *
- * DataHub only adds report / completion-validate nodes to the BigBlueButtonBN
+ * DataHub only adds dashboard / completion-validate nodes to the BigBlueButtonBN
  * settings navigation; it never replaces the parent navigation. It therefore
  * implements the additive append contract instead of the exclusive override
  * contract, so it no longer consumes the single override slot and other
@@ -38,7 +38,7 @@ use mod_bigbluebuttonbn\local\extension\navigation_append_addon as navigation_ap
  */
 class navigation_append_addon implements navigation_append_addon_interface {
     /**
-     * Appends DataHub report links to the settings navigation for BigBlueButtonBN.
+     * Appends the DataHub dashboard link to the settings navigation for BigBlueButtonBN.
      *
      * @param \settings_navigation $settingsnav The settings navigation object.
      * @param \navigation_node $nodenav The current navigation node.
@@ -63,27 +63,16 @@ class navigation_append_addon implements navigation_append_addon_interface {
                 if (has_capability('bbbext/bnx_datahub:viewreports', $context)) {
                     // Force every node already present on the module settings branch (the parent
                     // module's own nodes plus its completion-validate link) into the "more" menu,
-                    // so DataHub's report links, added immediately afterwards, become the first
-                    // secondary-navigation tabs shown to the user (OL2-3.1.1).
+                    // so the DataHub dashboard, added immediately afterwards, becomes the first
+                    // secondary-navigation tab shown to the user (OL2-3.1.1).
                     $nodenav->set_force_into_more_menu(true);
-                    // Attendance report link.
-                    $attendancereporturl = new moodle_url(
-                        '/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php',
+                    $dashboardurl = new moodle_url(
+                        '/mod/bigbluebuttonbn/extension/bnx_datahub/dashboard.php',
                         ['cmid' => $cm->id]
                     );
                     $nodenav->add(
-                        get_string('reportattendance', 'bbbext_bnx_datahub'),
-                        $attendancereporturl,
-                        navigation_node::TYPE_CONTAINER
-                    );
-                    // Engagement report link.
-                    $engagementreporturl = new moodle_url(
-                        '/mod/bigbluebuttonbn/extension/bnx_datahub/engagement.php',
-                        ['cmid' => $cm->id]
-                    );
-                    $nodenav->add(
-                        get_string('reportengagement', 'bbbext_bnx_datahub'),
-                        $engagementreporturl,
+                        get_string('dashboard:navigation', 'bbbext_bnx_datahub'),
+                        $dashboardurl,
                         navigation_node::TYPE_CONTAINER
                     );
                 }

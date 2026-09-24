@@ -114,31 +114,21 @@ final class navigation_append_addon_test extends advanced_testcase {
     }
 
     /**
-     * Test that attendance report URL is constructed correctly.
+     * Test that the dashboard URL is constructed correctly.
      */
-    public function test_attendance_report_url_format(): void {
+    public function test_dashboard_url_format(): void {
         $reflection = new ReflectionClass(navigation_append_addon::class);
 
-        // Read the source code to verify URL format.
+        // Read the source code to verify the dashboard URL format.
         $source = file_get_contents($reflection->getFileName());
-        $this->assertStringContainsString('/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php', $source);
+        $this->assertStringContainsString('/mod/bigbluebuttonbn/extension/bnx_datahub/dashboard.php', $source);
         $this->assertStringContainsString("'cmid' => \$cm->id", $source);
+        $this->assertStringNotContainsString('/mod/bigbluebuttonbn/extension/bnx_datahub/attendance.php', $source);
+        $this->assertStringNotContainsString('/mod/bigbluebuttonbn/extension/bnx_datahub/engagement.php', $source);
     }
 
     /**
-     * Test that engagement report URL is constructed correctly.
-     */
-    public function test_engagement_report_url_format(): void {
-        $reflection = new ReflectionClass(navigation_append_addon::class);
-
-        // Read the source code to verify URL format.
-        $source = file_get_contents($reflection->getFileName());
-        $this->assertStringContainsString('/mod/bigbluebuttonbn/extension/bnx_datahub/engagement.php', $source);
-        $this->assertStringContainsString("'cmid' => \$cm->id", $source);
-    }
-
-    /**
-     * Test that the class adds report links as navigation nodes.
+     * Test that the class adds the dashboard as a navigation node.
      */
     public function test_adds_navigation_nodes(): void {
         $reflection = new ReflectionClass(navigation_append_addon::class);
@@ -176,8 +166,8 @@ final class navigation_append_addon_test extends advanced_testcase {
     }
 
     /**
-     * Test that pre-existing nodes are forced into the more menu before the report
-     * links are appended, so DataHub's reports become the first tabs shown (OL2-3.1.1).
+     * Test that pre-existing nodes are forced into the more menu before the dashboard
+     * link is appended, so it becomes the first tab shown (OL2-3.1.1).
      */
     public function test_forces_existing_nodes_into_more_menu(): void {
         $reflection = new ReflectionClass(navigation_append_addon::class);

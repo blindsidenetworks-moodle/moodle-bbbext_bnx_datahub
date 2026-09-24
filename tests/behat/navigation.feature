@@ -1,8 +1,8 @@
 @mod @mod_bigbluebuttonbn @bbbext @bbbext_bnx_datahub @javascript
 Feature: BigBlueButton Data Hub navigation
   As a teacher with appropriate permissions
-  I should see report links in the BigBlueButton activity navigation
-  So that I can access attendance and engagement reports
+  I should see the DataHub dashboard in the BigBlueButton activity navigation
+  So that I can access activity insights and detailed reports
 
   Background:
     Given I enable "bigbluebuttonbn" "mod" plugin
@@ -25,34 +25,27 @@ Feature: BigBlueButton Data Hub navigation
       | activity        | course | name         | type |
       | bigbluebuttonbn | C1     | Test Meeting | 0    |
 
-  Scenario: Teacher can see report links in activity navigation when meeting events enabled
+  Scenario: Teacher can see dashboard in activity navigation when meeting events enabled
     Given I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    Then I should see "Attendance report"
-    And I should see "Engagement report"
+    Then I should see "Dashboard +"
+    And I should not see "Attendance report +"
+    And I should not see "Engagement report +"
 
-  Scenario: Teacher can navigate to attendance report from activity
+  Scenario: Teacher can navigate to dashboard from activity
     Given I change window size to "large"
     And I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    When I click on "Attendance report" "link"
-    Then I should see the attendance report
+    When I click on "Dashboard +" "link"
+    Then I should see "DataHub dashboard"
 
-  Scenario: Teacher can navigate to engagement report from activity
-    Given I change window size to "large"
-    And I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    When I click on "Engagement report" "link"
-    Then I should see the engagement report
-
-  Scenario: Report links not visible when meeting events disabled
+  Scenario: Dashboard is not visible when meeting events disabled
     Given the following config values are set as admin:
       | bigbluebuttonbn_meetingevents_enabled | 0 |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    Then I should not see "Attendance report"
-    And I should not see "Engagement report"
+    Then I should not see "Dashboard +"
 
-  Scenario: Student cannot see report links in activity navigation
+  Scenario: Student cannot see the dashboard in activity navigation
     Given I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "student1"
-    Then I should not see "Attendance report"
-    And I should not see "Engagement report"
+    Then I should not see "Dashboard +"

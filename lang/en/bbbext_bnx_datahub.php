@@ -80,6 +80,7 @@ $string['dashboard:learners'] = 'Unique learners';
 $string['dashboard:learnerchart'] = 'Latest session participation';
 $string['dashboard:medianattendance'] = 'Median attendance';
 $string['dashboard:meetings'] = 'Sessions held';
+$string['dashboard:navigation'] = 'Dashboard +';
 $string['dashboard:pollparticipants'] = 'Poll participants';
 $string['dashboard:viewattendance'] = 'View attendance details';
 $string['dashboard:viewengagement'] = 'View engagement details';
