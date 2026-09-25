@@ -33,9 +33,11 @@ class observer {
     public static function config_log_created(\core\event\config_log_created $event): void {
         $other = $event->other ?? [];
 
-        if (($other['name'] ?? '') !== 'disabled'
+        if (
+            ($other['name'] ?? '') !== 'disabled'
                 || ($other['plugin'] ?? '') !== 'bbbext_bnx_datahub'
-                || (int)($other['value'] ?? 0) === 1) {
+                || (int)($other['value'] ?? 0) === 1
+        ) {
             return;
         }
 
