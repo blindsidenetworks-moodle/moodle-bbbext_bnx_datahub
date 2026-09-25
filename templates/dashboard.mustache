@@ -18,6 +18,55 @@
     @template bbbext_bnx_datahub/dashboard
 
     The standalone DataHub activity dashboard.
+
+    Example context (json):
+    {
+        "title": "DataHub dashboard",
+        "intro": "Review attendance and engagement across your sessions.",
+        "hasdata": true,
+        "attendanceurl": "https://example.com/attendance.php?cmid=42",
+        "engagementurl": "https://example.com/engagement.php?cmid=42",
+        "attendanceaction": "View attendance",
+        "engagementaction": "View engagement",
+        "metrics": [
+            {
+                "label": "Sessions held",
+                "value": 5
+            }
+        ],
+        "attendancechart": "<div>Attendance chart</div>",
+        "engagementchart": "<div>Engagement chart</div>",
+        "learnerchart": "<div>Learner participation chart</div>",
+        "session": {
+            "sessiontitle": "Session overview",
+            "selectedsession": {
+                "name": "Introduction to Statistics",
+                "date": "Monday, 22 September 2026, 10:00 AM",
+                "duration": "1 hour"
+            },
+            "sessionfragmenturl": "https://example.com/session.php?cmid=42",
+            "cmid": 42,
+            "sessionselectorlabel": "Session",
+            "sessions": [
+                {
+                    "id": 17,
+                    "label": "Introduction to Statistics - 22 September 2026",
+                    "selected": true
+                }
+            ],
+            "sessionselectaction": "Show",
+            "sessionmetrics": [
+                {
+                    "value": 24,
+                    "label": "Participants"
+                }
+            ],
+            "hasattendees": false,
+            "noattendees": "No learner attendance was recorded for this session."
+        },
+        "emptytitle": "No meeting insights yet",
+        "emptytext": "Meeting insights will appear here after BigBlueButton sends analytics for a completed session."
+    }
 }}
 <section class="bbbext-bnx-datahub-dashboard" aria-labelledby="bbbext-bnx-datahub-dashboard-title">
     <header class="bbbext-bnx-datahub-dashboard__header">

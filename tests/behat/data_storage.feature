@@ -74,6 +74,6 @@ Feature: BigBlueButton Data Hub data storage
   Scenario: Activity without meetings shows empty report
     Given I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Attendance report" "link"
+    And I navigate to the attendance report for "Test Meeting"
     Then I should see the attendance report
     And no meeting data should exist for BigBlueButton activity "Test Meeting"

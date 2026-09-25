@@ -253,12 +253,14 @@ class dashboard implements renderable, templatable {
         $chart->set_title(get_string('dashboard:learnerchart', 'bbbext_bnx_datahub'));
         $chart->set_labels(array_map(static fn(\stdClass $learner): string => $learner->fullname, $learners));
 
-        foreach ([
-            'chats' => 'attendee:engchats',
-            'talks' => 'attendee:engtalks',
-            'raisedhands' => 'attendee:engraisehand',
-            'pollvotes' => 'attendee:engpollvotes',
-        ] as $metric => $label) {
+        foreach (
+            [
+                'chats' => 'attendee:engchats',
+                'talks' => 'attendee:engtalks',
+                'raisedhands' => 'attendee:engraisehand',
+                'pollvotes' => 'attendee:engpollvotes',
+            ] as $metric => $label
+        ) {
             $chart->add_series(new chart_series(
                 get_string($label, 'bbbext_bnx_datahub'),
                 array_map(static fn(\stdClass $learner): int => $learner->{$metric}, $learners)

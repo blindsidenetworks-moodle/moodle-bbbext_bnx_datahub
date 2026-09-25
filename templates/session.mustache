@@ -2,6 +2,57 @@
     @template bbbext_bnx_datahub/session
 
     Session overview fragment for the DataHub dashboard.
+
+    Example context (json):
+    {
+        "sessiontitle": "Session overview",
+        "selectedsession": {
+            "name": "Introduction to Statistics",
+            "date": "Monday, 22 September 2026, 10:00 AM",
+            "duration": "1 hour"
+        },
+        "sessionfragmenturl": "https://example.com/session.php?cmid=42",
+        "cmid": 42,
+        "sessionselectorlabel": "Session",
+        "sessions": [
+            {
+                "id": 17,
+                "label": "Introduction to Statistics - 22 September 2026",
+                "selected": true
+            }
+        ],
+        "sessionselectaction": "Show",
+        "sessionmetrics": [
+            {
+                "value": 24,
+                "label": "Participants"
+            }
+        ],
+        "hasattendees": true,
+        "attendeecolumns": {
+            "learner": "Learner",
+            "attendance": "Attendance",
+            "talktime": "Talk time",
+            "messages": "Chat messages",
+            "reactions": "Reactions",
+            "raisedhands": "Raised hands",
+            "pollvotes": "Poll votes",
+            "score": "Activity score"
+        },
+        "attendees": [
+            {
+                "fullname": "Alex Smith",
+                "attendance": "58 mins",
+                "talktime": "12 mins",
+                "messages": 5,
+                "reactions": 3,
+                "raisedhands": 1,
+                "pollvotes": 2,
+                "score": 85
+            }
+        ],
+        "noattendees": "No learner attendance was recorded for this session."
+    }
 }}
 <div class="bbbext-bnx-datahub-dashboard__session-header">
     <div>

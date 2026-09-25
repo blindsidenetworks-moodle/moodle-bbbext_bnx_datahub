@@ -68,6 +68,7 @@ if ($cmid) {
 }
 
 echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('reportengagement', 'bbbext_bnx_datahub'));
 
 // Output the hidden span for nav label override.
 if ($cmid) {

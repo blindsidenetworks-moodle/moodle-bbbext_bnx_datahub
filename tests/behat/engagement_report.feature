@@ -60,7 +60,7 @@ Feature: BigBlueButton Data Hub engagement report
       | student1 | viewer | 25       | 5        | 3            | 10        |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Engagement report" "link"
+    And I navigate to the engagement report for "Test Meeting"
     Then I should see the engagement report
     And I should see attendee "Student 1" in the report
 
@@ -74,7 +74,7 @@ Feature: BigBlueButton Data Hub engagement report
       | student1 | viewer    | 5        | 300         |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Engagement report" "link"
+    And I navigate to the engagement report for "Test Meeting"
     Then I should see the engagement report
     And I should see attendee "Teacher 1" in the report
     And I should see attendee "Student 1" in the report
@@ -90,7 +90,7 @@ Feature: BigBlueButton Data Hub engagement report
       | student3 | viewer | 0            |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Engagement report" "link"
+    And I navigate to the engagement report for "Test Meeting"
     Then I should see the engagement report
     And I should see attendee "Student 1" in the report
     And I should see attendee "Student 2" in the report
@@ -105,7 +105,7 @@ Feature: BigBlueButton Data Hub engagement report
       | student2 | viewer | 2            |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Engagement report" "link"
+    And I navigate to the engagement report for "Test Meeting"
     Then I should see the engagement report
 
   Scenario: Engagement report shows emoji reactions
@@ -118,7 +118,7 @@ Feature: BigBlueButton Data Hub engagement report
       | student2 | viewer | 8         |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Engagement report" "link"
+    And I navigate to the engagement report for "Test Meeting"
     Then I should see the engagement report
 
   Scenario: Engagement report shows engagement scores
@@ -132,5 +132,5 @@ Feature: BigBlueButton Data Hub engagement report
       | student3 | viewer | 50    |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Engagement report" "link"
+    And I navigate to the engagement report for "Test Meeting"
     Then I should see the engagement report

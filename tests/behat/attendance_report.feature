@@ -63,7 +63,7 @@ Feature: BigBlueButton Data Hub attendance report
       | student1 | viewer    | 2026-01-01 10:05:00 | 2026-01-01 10:55:00 |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Attendance report" "link"
+    And I navigate to the attendance report for "Test Meeting"
     Then I should see the attendance report
     And I should see "Moderator"
     And I should see "Viewer"
@@ -81,7 +81,7 @@ Feature: BigBlueButton Data Hub attendance report
       | student2 | viewer | 2026-01-02 10:10:00 | 2026-01-02 11:00:00 |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Attendance report" "link"
+    And I navigate to the attendance report for "Test Meeting"
     Then I should see the attendance report
     And I should see attendee "Student 1" in the report
     And I should see attendee "Student 2" in the report
@@ -95,7 +95,7 @@ Feature: BigBlueButton Data Hub attendance report
       | student1 | viewer | 2026-01-01 10:05:00 | 2026-01-01 10:55:00 |
     And I change window size to "large"
     When I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
-    And I click on "Attendance report" "link"
+    And I navigate to the attendance report for "Test Meeting"
     Then I should see the attendance report
     And I should see attendee "Student 1" in the report
     And I should not see attendee "Student 3" in the report

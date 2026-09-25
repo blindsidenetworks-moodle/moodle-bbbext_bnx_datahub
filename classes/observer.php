@@ -35,8 +35,8 @@ class observer {
 
         if (
             ($other['name'] ?? '') !== 'disabled'
-                || ($other['plugin'] ?? '') !== 'bbbext_bnx_datahub'
-                || (int)($other['value'] ?? 0) === 1
+            || ($other['plugin'] ?? '') !== 'bbbext_bnx_datahub'
+            || (int)($other['value'] ?? 0) === 1
         ) {
             return;
         }
