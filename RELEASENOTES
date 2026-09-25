@@ -1,3 +1,8 @@
+1.1.1 (September 25, 2026)
+- chore: Promote the 1.1.1 release to stable.
+- fix: Scope activity attendance and engagement reports to the current BigBlueButton room at the query level, preventing data from other rooms and courses appearing in an activity report.
+- ci: Pin the CI BNX dependency to the Moodle 5.1-compatible BNX 1.2 release branch.
+
 1.1 (September 4, 2026)
 - chore: Promote the 1.1 release line from release candidate to stable with no additional schema or runtime changes beyond 1.1-rc.1.
 

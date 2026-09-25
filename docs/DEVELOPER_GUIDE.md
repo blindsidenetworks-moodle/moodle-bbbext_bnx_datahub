@@ -7,9 +7,9 @@ BNX base record for activity linkage and consumes BigBlueButton broker meeting
 events supplied by the parent `mod_bigbluebuttonbn` module. It must never alter
 parent settings, BNX settings, or meeting behavior.
 
-The current DataHub release line targets the BNX 1.2/Moodle 5.1-5.2 contract.
-Treat a Moodle 5.3/BNX 1.3 port as separate compatibility work, including a
-review of each parent hook signature and Report Builder API.
+The current DataHub release line targets the BNX 1.2/Moodle 5.1-5.3 contract.
+Treat a BNX 1.3 port as separate compatibility work, including a review of
+each parent hook signature and Report Builder API.
 
 ## Extension hook and event flow
 

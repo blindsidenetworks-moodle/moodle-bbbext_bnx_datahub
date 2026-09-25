@@ -2,10 +2,9 @@
 
 ## Supported release line
 
-DataHub `1.1.1-alpha.1` supports Moodle 5.1 and 5.2 and requires the BNX 1.2
-contract. BNX 1.3 is Moodle 5.3-only, so do not deploy this DataHub release
-with BNX 1.3. Upgrade and validate DataHub before using the BNX 1.3 release
-line.
+DataHub `1.1.1` supports Moodle 5.1, 5.2, and 5.3 and requires the BNX 1.2
+contract. BNX 1.3 is Moodle 5.3-only; validate DataHub before deploying it
+with that BNX release line.
 
 ## Install and prerequisites
 
