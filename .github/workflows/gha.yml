@@ -91,7 +91,7 @@ jobs:
       - name: Install bbbext_bnx dependency
         run: |
           cd moodle/public/mod/bigbluebuttonbn/extension
-          git clone https://${{ secrets.BNX_REPO_TOKEN }}@github.com/blindsidenetworks-ps/moodle-bbbext_bnx.git bnx
+          git clone --branch 1.2.x-release --single-branch https://${{ secrets.BNX_REPO_TOKEN }}@github.com/blindsidenetworks-ps/moodle-bbbext_bnx.git bnx
         env:
           BNX_REPO_TOKEN: ${{ secrets.BNX_REPO_TOKEN }}
 
