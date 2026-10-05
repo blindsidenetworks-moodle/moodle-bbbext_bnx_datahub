@@ -43,6 +43,13 @@ function xmldb_bbbext_bnx_datahub_install() {
     // sidecar: if bbbext_bnreports is installed and enabled, DataHub self-disables
     // (own namespace only) so the two sidecars never process events at the same time
     // (OL-3.2.1). This is a cheap guard, not a data migration.
+    //
+    // During a bulk install (e.g. a fresh site) the plugin manager's
+    // installed-plugins cache was built before bbbext_bnx was installed earlier
+    // in the same run, so the BNX guard would wrongly self-disable DataHub.
+    // Refresh it so the guard sees the real state: BNX present and enabled on a
+    // fresh site, or present but disabled when DataHub is added later.
+    \core_plugin_manager::reset_caches();
     bbbext_bnx_datahub_disable_if_bnx_unavailable();
     bbbext_bnx_datahub_disable_if_bnreports_present();
 }

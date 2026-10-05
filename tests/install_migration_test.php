@@ -203,6 +203,47 @@ final class install_migration_test extends \advanced_testcase {
     }
 
     /**
+     * During a bulk install the plugin manager cache may predate bbbext_bnx even
+     * though it is already installed; the install step must not self-disable
+     * DataHub because of that stale cache.
+     */
+    public function test_install_does_not_self_disable_when_bnx_not_cached_yet(): void {
+        require_once(__DIR__ . '/../db/install.php');
+
+        unset_config('version', 'bbbext_bnreports');
+        unset_config('disabled', 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        // Prime the plugin manager cache without bbbext_bnx, as happens mid bulk install.
+        unset_config('version', 'bbbext_bnx');
+        \core_plugin_manager::reset_caches();
+        \core_plugin_manager::instance()->get_installed_plugins('bbbext');
+        set_config('version', '2026090400', 'bbbext_bnx');
+
+        xmldb_bbbext_bnx_datahub_install();
+
+        $this->assertFalse(get_config('bbbext_bnx_datahub', 'disabled'));
+    }
+
+    /**
+     * Installing DataHub on a site where BNX is installed but disabled must
+     * self-disable DataHub and leave BNX untouched.
+     */
+    public function test_install_self_disables_when_bnx_disabled(): void {
+        require_once(__DIR__ . '/../db/install.php');
+
+        unset_config('version', 'bbbext_bnreports');
+        set_config('version', '2026090400', 'bbbext_bnx');
+        set_config('disabled', 1, 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        \core_plugin_manager::reset_caches();
+
+        xmldb_bbbext_bnx_datahub_install();
+
+        $this->assertSame('1', get_config('bbbext_bnx_datahub', 'disabled'));
+        $this->assertSame('1', get_config('bbbext_bnx', 'disabled'));
+    }
+
+    /**
      * When BNX is disabled, DataHub must self-disable and leave BNX untouched.
      */
     public function test_self_disable_when_bnx_disabled(): void {
