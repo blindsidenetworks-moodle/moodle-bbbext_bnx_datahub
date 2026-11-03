@@ -255,6 +255,38 @@ final class logger_test extends advanced_testcase {
     }
 
     /**
+     * Boolean and string moderator values are stored correctly on insert and update.
+     *
+     * @return void
+     */
+    public function test_log_meeting_user_normalises_moderator_values(): void {
+        global $DB;
+
+        [$course, $bbb] = $this->create_bbb_with_bnx();
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'editingteacher');
+        $meetingid = logger::log_meeting(instance::get_from_instanceid($bbb->id), $this->create_meeting_data());
+        $attendee = $this->create_attendee_data($user->id);
+
+        $cases = [
+            [true, 'moderator'],
+            [false, 'viewer'],
+            ['true', 'moderator'],
+            ['false', 'viewer'],
+            [null, 'viewer'],
+        ];
+        foreach ($cases as [$value, $expected]) {
+            $attendee->moderator = $value;
+            logger::log_meeting_user($meetingid, $attendee);
+            $record = $DB->get_record('bbbext_bnx_datahub_meeting_user', [
+                'meetingid' => $meetingid,
+                'userid' => $user->id,
+            ], '*', MUST_EXIST);
+            $this->assertSame($expected, $record->attendeerole);
+        }
+    }
+
+    /**
      * Test log_meeting_user updates existing record for same user.
      */
     public function test_log_meeting_user_updates_existing_record(): void {
