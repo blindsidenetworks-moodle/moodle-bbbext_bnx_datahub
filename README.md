@@ -28,12 +28,12 @@ This plugin extends the BigBlueButton activity module by capturing real-time mee
 
 ## Requirements
 
-- Moodle 5.1, 5.2, or 5.3 (the current `1.1.1` stable release line)
+- Moodle 5.1, 5.2, or 5.3 (the current `1.1.2` stable release line)
 - BigBlueButton plugin (`mod_bigbluebuttonbn`)
 - BN Experience plugin (`bbbext_bnx` 1.2 contract) - must be enabled
 - BigBlueButton server with analytics callback enabled (`meetingevents_enabled`)
 
-> BNX `1.3-alpha.1` is Moodle 5.3-only. DataHub `1.1.1` remains compatible
+> BNX `1.3-alpha.1` is Moodle 5.3-only. DataHub `1.1.2` remains compatible
 > with BNX 1.2 on Moodle 5.3. Validate its parent-hook contract before
 > deploying DataHub with BNX 1.3.
 
