@@ -36,7 +36,7 @@ Feature: BigBlueButton Data Hub navigation
     Given I change window size to "large"
     And I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
     When I click on "Dashboard +" "link"
-    Then I should see "DataHub dashboard"
+    Then I should see "DataHub dashboard +"
 
   Scenario: Dashboard is not visible when meeting events disabled
     Given the following config values are set as admin:

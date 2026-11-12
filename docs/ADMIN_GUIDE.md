@@ -2,9 +2,9 @@
 
 ## Supported release line
 
-DataHub `1.1.2` supports Moodle 5.1, 5.2, and 5.3 and requires the BNX 1.2
-contract. BNX 1.3 is Moodle 5.3-only; validate DataHub before deploying it
-with that BNX release line.
+DataHub `1.2-beta.1` supports Moodle 5.3 and requires BNX 1.3 or later
+(minimum version code `2026110500`). Both plugins are beta releases; use
+matching Moodle 5.3-compatible builds.
 
 ## Install and prerequisites
 
@@ -22,7 +22,10 @@ prerequisites so an administrator can make the change deliberately.
 ## Reports and permissions
 
 When prerequisites are satisfied, BigBlueButton activity navigation provides
-attendance and engagement report links. Report access requires
+the **Dashboard +** link. The dashboard summarizes activity attendance and
+engagement across sessions, and provides a selectable session overview with
+learner participation details. Attendance and engagement Report Builder pages
+remain available as detailed reports from the dashboard. Report access requires
 `bbbext/bnx_datahub:viewreports`, which is granted by default to managers,
 editing teachers, and administrators at course context.
 

@@ -1,3 +1,10 @@
+1.2-beta.1 (November 5, 2026)
+- feat: Add an activity dashboard with attendance and engagement summaries, charts, and a selectable session-level learner overview.
+- feat: Add a **Dashboard +** activity navigation entry while preserving other subplugin navigation contributions; refresh selected-session details asynchronously.
+- fix: Constrain dashboard chart layout and refresh the plugin cache before checking the BNX dependency during installation.
+- chore: Target Moodle 5.3 and BNX 1.3 (minimum version code 2026110500); promote the release to beta.
+- ui: Rename the dashboard title to `DataHub dashboard +`.
+
 1.1.1 (September 25, 2026)
 - chore: Promote the 1.1.1 release to stable.
 - fix: Add a room-level base condition to activity attendance and engagement reports so data from other rooms and courses is excluded.

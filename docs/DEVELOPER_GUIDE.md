@@ -7,9 +7,10 @@ BNX base record for activity linkage and consumes BigBlueButton broker meeting
 events supplied by the parent `mod_bigbluebuttonbn` module. It must never alter
 parent settings, BNX settings, or meeting behavior.
 
-The current DataHub release line targets the BNX 1.2/Moodle 5.1-5.3 contract.
-Treat a BNX 1.3 port as separate compatibility work, including a review of
-each parent hook signature and Report Builder API.
+DataHub `1.2-beta.1` targets Moodle 5.3 and the BNX 1.3 contract (minimum BNX
+version code `2026110500`). Compatibility with other Moodle or BNX release
+lines requires separate validation of parent hook signatures and Report Builder
+APIs.
 
 ## Extension hook and event flow
 
@@ -48,10 +49,11 @@ the system report factory for fixed activity-facing reports. Add a new metric by
 updating the schema/upgrade path, ingestion mapping, entity column, datasource,
 privacy export, and appropriate tests as one feature.
 
-The activity navigation exposes the DataHub dashboard only when prerequisites
-are met and the viewer has `bbbext/bnx_datahub:viewreports`. The dashboard shows
+The activity navigation exposes **Dashboard +** only when prerequisites are
+met and the viewer has `bbbext/bnx_datahub:viewreports`. The dashboard shows
 cross-session charts and a selectable post-session attendee overview using the
-metrics already persisted by DataHub. Attendance and engagement Report Builder
+metrics already persisted by DataHub. Session details refresh asynchronously
+when a different session is selected. Attendance and engagement Report Builder
 pages remain available as detailed views from the dashboard.
 
 The optional `meetingid` dashboard parameter is accepted only when the meeting

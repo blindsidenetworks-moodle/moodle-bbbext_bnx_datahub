@@ -8,7 +8,7 @@
 | [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | Developers | `bbbext` hook integration, event ingestion, persistence, reports, and extension practices |
 | [docs/DATA_AND_PRIVACY.md](docs/DATA_AND_PRIVACY.md) | Administrators and developers | Analytics data model, access control, retention, Privacy API, and migrations |
 
-A Moodle BigBlueButton extension plugin that captures meeting analytics and provides attendance and engagement reports.
+A Moodle BigBlueButton extension plugin that captures meeting analytics and provides an activity dashboard plus attendance and engagement reports.
 
 ## Description
 
@@ -21,6 +21,7 @@ This plugin extends the BigBlueButton activity module by capturing real-time mee
 - **Attendance Tracking**: Records who joined, when they joined/left, and session duration
 - **Engagement Metrics**: Tracks chat messages, talk count, talk time, hand raises, emoji reactions, and poll votes
 - **Reportbuilder Integration**: Uses Moodle's Reportbuilder for customizable, filterable, downloadable reports
+- **Activity Dashboard**: Summarizes attendance and engagement across sessions, with charts and a selectable session overview
 - **Attendance Report**: Shows meeting participation with join/leave times and duration
 - **Engagement Report**: Displays interaction metrics for measuring student participation quality
 - **Capability-Based Access**: Only authorized users (teachers, managers, admins) can view reports
@@ -28,21 +29,18 @@ This plugin extends the BigBlueButton activity module by capturing real-time mee
 
 ## Requirements
 
-- Moodle 5.1, 5.2, or 5.3 (the current `1.1.2` stable release line)
+- Moodle 5.3 (the current `1.2-beta.1` beta release)
 - BigBlueButton plugin (`mod_bigbluebuttonbn`)
-- BN Experience plugin (`bbbext_bnx` 1.2 contract) - must be enabled
+- BN Experience plugin (`bbbext_bnx` 1.3 or later; minimum version code `2026110500`) - must be enabled
 - BigBlueButton server with analytics callback enabled (`meetingevents_enabled`)
-
-> BNX `1.3-alpha.1` is Moodle 5.3-only. DataHub `1.1.2` remains compatible
-> with BNX 1.2 on Moodle 5.3. Validate its parent-hook contract before
-> deploying DataHub with BNX 1.3.
 
 ## Installation
 
 1. Copy the plugin to `mod/bigbluebuttonbn/extension/bnx_datahub/`
 2. Visit Site Administration > Notifications to complete installation
-3. Ensure `bbbext_bnx` is enabled
+3. Ensure a compatible `bbbext_bnx` 1.3 release is enabled
 4. Enable meeting events: Site Administration > Plugins > Activity modules > BigBlueButton > General settings > `meetingevents_enabled`
+5. Open **Dashboard +** from the BigBlueButton activity navigation to view the activity summary and session overview.
 
 ## Sidecar contract
 
@@ -69,7 +67,8 @@ As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict s
 |-------|---------|
 | `logger` | Core data storage - logs meeting and attendee data to database |
 | `broker_meeting_events_addons` | Processes webhook events from BigBlueButton server |
-| `navigation_override_addon` | Adds report links to activity navigation |
+| `navigation_append_addon` | Adds the dashboard link to activity navigation without replacing other navigation contributions |
+| `dashboard_service` and `dashboard` | Build and render activity-level dashboard summaries and session details |
 | `privacy\provider` | GDPR Privacy API implementation |
 
 ### Reportbuilder Entities
@@ -239,26 +238,26 @@ Tests the engagement system report configuration.
 | `test_report_with_bigbluebuttonbnid_parameter` | **Context** - Filters to specific activity |
 | `test_engagement_metrics_columns` | **Engagement** - All metrics columns present |
 
-#### navigation_override_addon_test.php (11 tests)
-Tests the navigation addon that adds report links.
+#### navigation_append_addon_test.php (11 tests)
+Tests the navigation addon that adds the dashboard link.
 
 | Test | Purpose |
 |------|---------|
 | `test_class_instantiation` | **Framework** - Class creates successfully |
 | `test_implements_interface` | **Framework** - Proper addon interface |
-| `test_override_settings_navigation_method_exists` | **API** - Required method present |
+| `test_append_settings_navigation_method_exists` | **API** - Required method present |
 | `test_requires_bnx_plugin` | **Dependency** - Checks BNX enabled |
 | `test_checks_meetingevents_config` | **Config** - Requires meetingevents enabled |
 | `test_checks_viewreports_capability` | **Security** - Capability check present |
-| `test_attendance_report_url_format` | **Navigation** - Correct URL generated |
-| `test_engagement_report_url_format` | **Navigation** - Correct URL generated |
-| `test_adds_navigation_nodes` | **UI** - Links added to navigation |
+| `test_dashboard_url_format` | **Navigation** - Dashboard URL generated |
+| `test_adds_navigation_nodes` | **UI** - Dashboard added to navigation |
 | `test_excludes_recordings_only_instances` | **Context** - No reports for recordings-only |
-| `test_completion_validate_for_managers` | **Admin** - Completion validation link |
+| `test_does_not_append_completion_validate` | **Navigation** - Avoids duplicating the parent link |
+| `test_forces_existing_nodes_into_more_menu` | **Navigation** - Keeps the dashboard as the first activity tab |
 
 ### Behat Features
 
-The plugin includes 38 Behat scenarios across 6 feature files for end-to-end browser testing:
+The plugin includes Behat scenarios across 6 feature files for end-to-end browser testing:
 
 #### bnx_dependency.feature (3 scenarios)
 Tests the BNX parent plugin dependency behavior.
@@ -269,16 +268,15 @@ Tests the BNX parent plugin dependency behavior.
 | `Data Hub reports are accessible when BNX is enabled` | **Integration** - Reports work with BNX |
 | `Standard BigBlueButton activity works without BNX` | **Compatibility** - Core BBB unaffected |
 
-#### navigation.feature (5 scenarios)
-Tests report link visibility in activity navigation.
+#### navigation.feature (4 scenarios)
+Tests dashboard visibility and navigation in BigBlueButton activities.
 
 | Scenario | Purpose |
 |----------|---------|
-| `Teacher can see report links in activity navigation when meeting events enabled` | **UI** - Links appear for teachers |
-| `Teacher can navigate to attendance report from activity` | **Navigation** - Attendance link works |
-| `Teacher can navigate to engagement report from activity` | **Navigation** - Engagement link works |
-| `Report links not visible when meeting events disabled` | **Config** - Links hidden when disabled |
-| `Student cannot see report links in activity navigation` | **Security** - Students don't see reports |
+| `Teacher can see dashboard in activity navigation when meeting events enabled` | **UI** - Dashboard appears for teachers |
+| `Teacher can navigate to dashboard from activity` | **Navigation** - Dashboard link works |
+| `Dashboard is not visible when meeting events disabled` | **Config** - Dashboard hidden when disabled |
+| `Student cannot see the dashboard in activity navigation` | **Security** - Students don't see the dashboard |
 
 #### attendance_report.feature (5 scenarios)
 Tests the attendance report functionality.

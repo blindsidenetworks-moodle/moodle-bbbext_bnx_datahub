@@ -1,3 +1,10 @@
+1.2-beta.1 (November 5, 2026)
+- Add the **Dashboard +** activity page with cross-session attendance and engagement summaries, charts, and selectable session details.
+- Show learner participation details for the selected session; session content refreshes without reloading the full page.
+- Keep detailed attendance and engagement reports available from the dashboard.
+- Require Moodle 5.3 and BNX 1.3 or later (minimum BNX version code `2026110500`).
+- Update the dashboard title to `DataHub dashboard +`.
+
 1.1.1 (September 25, 2026)
 - chore: Promote the 1.1.1 release to stable.
 - fix: Scope activity attendance and engagement reports to the current BigBlueButton room at the query level, preventing data from other rooms and courses appearing in an activity report.
