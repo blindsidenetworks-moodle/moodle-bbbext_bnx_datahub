@@ -42,6 +42,12 @@ final class dashboard_test extends advanced_testcase {
         $this->assertObjectHasProperty('emptytitle', $data);
         $this->assertStringContainsString('attendance.php?cmid=42', $data->attendanceurl);
         $this->assertStringContainsString('engagement.php?cmid=42', $data->engagementurl);
+        $this->assertStringContainsString('excluded.php?cmid=42', $data->excludedurl);
+
+        $excluded = (new dashboard((object) ['hasdata' => false, 'excludedcount' => 2], 42))->export_for_template($OUTPUT);
+        $html = $OUTPUT->render_from_template('bbbext_bnx_datahub/dashboard', $excluded);
+        $this->assertStringContainsString('Excluded sessions (2)', $html);
+        $this->assertStringContainsString('All sessions are excluded', $html);
     }
 
     /**
@@ -114,6 +120,16 @@ final class dashboard_test extends advanced_testcase {
         $this->assertStringContainsString('session.php?cmid=42', $data->session->sessionfragmenturl);
         $html = $OUTPUT->render_from_template('bbbext_bnx_datahub/dashboard', $data);
         $this->assertStringContainsString('chart-area', $html);
+        $this->assertLessThan(
+            strpos($html, 'chart-area', strpos($html, 'bbbext-bnx-datahub-session-title')),
+            strpos($html, 'name="meetingid"')
+        );
+        $this->assertStringNotContainsString('name="action" value="exclude"', $html);
+
+        $managed = (new dashboard($input, 42, true))->export_for_template($OUTPUT);
+        $managedhtml = $OUTPUT->render_from_template('bbbext_bnx_datahub/dashboard', $managed);
+        $this->assertStringContainsString('name="action" value="exclude"', $managedhtml);
+        $this->assertNotEmpty((new dashboard($input, 42))->export_session_for_template()->learnerchart);
 
         $input->selectedlearners = [];
         $emptydata = (new dashboard($input, 42))->export_for_template($OUTPUT);
@@ -121,5 +137,6 @@ final class dashboard_test extends advanced_testcase {
         $this->assertFalse($emptydata->session->hasattendees);
         $emptyhtml = $OUTPUT->render_from_template('bbbext_bnx_datahub/dashboard', $emptydata);
         $this->assertStringContainsString($emptydata->session->noattendees, $emptyhtml);
+        $this->assertSame(1, substr_count($emptyhtml, $emptydata->session->noattendees));
     }
 }

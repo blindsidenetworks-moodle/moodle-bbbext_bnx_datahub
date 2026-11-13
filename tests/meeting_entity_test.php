@@ -103,6 +103,7 @@ final class meeting_entity_test extends advanced_testcase {
         $this->assertContains('name', $columnnames);
         $this->assertContains('timestart', $columnnames);
         $this->assertContains('timeend', $columnnames);
+        $this->assertContains('excluded', $columnnames);
     }
 
     /**
@@ -116,5 +117,6 @@ final class meeting_entity_test extends advanced_testcase {
         $filters = $entity->get_filters();
 
         $this->assertNotEmpty($filters);
+        $this->assertContains('excluded', array_map(static fn($filter) => $filter->get_name(), $filters));
     }
 }

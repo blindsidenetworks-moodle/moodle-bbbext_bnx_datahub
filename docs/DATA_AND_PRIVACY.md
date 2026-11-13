@@ -6,7 +6,7 @@ DataHub records BigBlueButton meeting callbacks in two tables:
 
 | Table | Data |
 | --- | --- |
-| `bbbext_bnx_datahub_meeting` | Activity linkage, BigBlueButton meeting IDs, name, start/end time, duration, metadata, and raw event payload. |
+| `bbbext_bnx_datahub_meeting` | Activity linkage, BigBlueButton meeting IDs, name, start/end time, duration, exclusion status, metadata, and raw event payload. |
 | `bbbext_bnx_datahub_meeting_user` | User linkage where known, display name, role, join/leave time, duration, engagement counters, score, and raw event payload. |
 
 The attendee table may represent a guest without a Moodle user ID. It is still
@@ -20,6 +20,12 @@ The navigation addon hides links from unauthorized users, but report endpoints
 must remain capability-protected. Do not expose meeting or attendee rows through
 an unauthenticated endpoint or grant this capability to learner roles by
 default.
+
+Changing session exclusion requires `bbbext/bnx_datahub:manageexclusions` at
+the activity context. Changes are logged as Moodle events. Exclusion only changes
+default reporting visibility; it does not delete data or remove it from privacy
+exports and deletion requests. Backups preserve the status, and older backups
+without it restore sessions as included.
 
 ## Moodle Privacy API
 

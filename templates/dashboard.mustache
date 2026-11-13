@@ -28,6 +28,9 @@
         "engagementurl": "https://example.com/engagement.php?cmid=42",
         "attendanceaction": "View attendance",
         "engagementaction": "View engagement",
+        "overalltitle": "Overall summary",
+        "excludedurl": "https://example.com/excluded.php?cmid=42",
+        "excludedlabel": "Excluded sessions (0)",
         "metrics": [
             {
                 "label": "Sessions held",
@@ -38,7 +41,7 @@
         "engagementchart": "<div>Engagement chart</div>",
         "learnerchart": "<div>Learner participation chart</div>",
         "session": {
-            "sessiontitle": "Session overview",
+            "sessiontitle": "Session summary",
             "selectedsession": {
                 "name": "Introduction to Statistics",
                 "date": "Monday, 22 September 2026, 10:00 AM",
@@ -55,6 +58,7 @@
                 }
             ],
             "sessionselectaction": "Show",
+            "learnerchart": "<div>Learner participation chart</div>",
             "sessionmetrics": [
                 {
                     "value": 24,
@@ -80,6 +84,11 @@
         </nav>
     </header>
 
+    <div class="bbbext-bnx-datahub-dashboard__summary-header">
+        <h3>{{overalltitle}}</h3>
+        <a href="{{excludedurl}}">{{excludedlabel}}</a>
+    </div>
+
     {{#hasdata}}
         <div class="bbbext-bnx-datahub-dashboard__metrics">
             {{#metrics}}
@@ -96,14 +105,6 @@
             </section>
             <section class="bbbext-bnx-datahub-dashboard__chart" aria-label="{{engagementaction}}">
                 {{{engagementchart}}}
-            </section>
-            <section class="bbbext-bnx-datahub-dashboard__chart bbbext-bnx-datahub-dashboard__chart--wide">
-                {{#session.hasattendees}}
-                    {{{learnerchart}}}
-                {{/session.hasattendees}}
-                {{^session.hasattendees}}
-                    <div class="alert alert-info mb-0" role="status">{{session.noattendees}}</div>
-                {{/session.hasattendees}}
             </section>
         </div>
 

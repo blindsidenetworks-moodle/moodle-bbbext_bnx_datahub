@@ -190,8 +190,11 @@ final class privacy_provider_test extends provider_testcase {
      * Test export_user_data exports the correct data.
      */
     public function test_export_user_data(): void {
+        global $DB;
+
         $user = $this->getDataGenerator()->create_user();
         [$course, $bbb, $cm, $context] = $this->create_test_data($user->id);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'excluded', 1, ['meetingname' => 'Privacy Test Meeting']);
 
         $contextlist = provider::get_contexts_for_userid($user->id);
         $approvedcontextlist = new approved_contextlist($user, 'bbbext_bnx_datahub', $contextlist->get_contextids());
@@ -221,6 +224,8 @@ final class privacy_provider_test extends provider_testcase {
         $user2 = $this->getDataGenerator()->create_user();
 
         [$course, $bbb, $cm, $context] = $this->create_test_data($user1->id);
+
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'excluded', 1, ['meetingname' => 'Privacy Test Meeting']);
 
         // Add another user's data to the same meeting.
         $meeting = $DB->get_record('bbbext_bnx_datahub_meeting', ['meetingname' => 'Privacy Test Meeting']);

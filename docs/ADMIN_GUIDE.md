@@ -34,6 +34,14 @@ engagement collected from BigBlueButton meeting-event callbacks. Use Moodle's
 normal report filters and downloads; DataHub does not expose a separate
 external API for reports.
 
+Users with `bbbext/bnx_datahub:manageexclusions` can exclude a selected session
+from the dashboard after confirmation, and restore it from **Excluded sessions**.
+The capability defaults to roles that can manage activities. Excluded sessions
+are omitted from dashboard summaries and built-in attendance and engagement
+reports, including downloads. Custom Report Builder reports can use the meeting
+entity's **Excluded from default reports** column and filter to choose which
+sessions to include. Exclusion is manual and does not delete data.
+
 ## Operations
 
 DataHub is passive. It records parent broker callbacks only; it does not alter

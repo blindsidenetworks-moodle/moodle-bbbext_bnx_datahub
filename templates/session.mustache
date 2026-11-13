@@ -5,7 +5,7 @@
 
     Example context (json):
     {
-        "sessiontitle": "Session overview",
+        "sessiontitle": "Session summary",
         "selectedsession": {
             "name": "Introduction to Statistics",
             "date": "Monday, 22 September 2026, 10:00 AM",
@@ -65,18 +65,38 @@
             {{selectedsession.duration}}
         </p>
     </div>
-    <form method="get" action="dashboard.php" class="bbbext-bnx-datahub-dashboard__selector"
-        data-fragment-url="{{sessionfragmenturl}}">
-        <input type="hidden" name="cmid" value="{{cmid}}">
-        <label for="bbbext-bnx-datahub-meeting">{{sessionselectorlabel}}</label>
-        <select id="bbbext-bnx-datahub-meeting" name="meetingid" class="form-select">
-            {{#sessions}}
-                <option value="{{id}}" {{#selected}}selected{{/selected}}>{{label}}</option>
-            {{/sessions}}
-        </select>
-        <button type="submit" class="btn btn-secondary">{{sessionselectaction}}</button>
-    </form>
+    <div class="bbbext-bnx-datahub-dashboard__session-actions">
+        <form method="get" action="dashboard.php" class="bbbext-bnx-datahub-dashboard__selector"
+            data-fragment-url="{{sessionfragmenturl}}">
+            <input type="hidden" name="cmid" value="{{cmid}}">
+            <label for="bbbext-bnx-datahub-meeting">{{sessionselectorlabel}}</label>
+            <select id="bbbext-bnx-datahub-meeting" name="meetingid" class="form-select">
+                {{#sessions}}
+                    <option value="{{id}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                {{/sessions}}
+            </select>
+            <button type="submit" class="btn btn-secondary" data-action="show-session">{{sessionselectaction}}</button>
+        </form>
+        {{#canmanage}}
+            <form method="post" action="{{excludeurl}}">
+                <input type="hidden" name="cmid" value="{{cmid}}">
+                <input type="hidden" name="meetingid" value="{{selectedmeetingid}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="action" value="exclude">
+                <button type="submit" class="btn btn-outline-secondary">{{excludeaction}}</button>
+            </form>
+        {{/canmanage}}
+    </div>
 </div>
+
+<section class="bbbext-bnx-datahub-dashboard__chart bbbext-bnx-datahub-dashboard__chart--wide">
+    {{#hasattendees}}
+        {{{learnerchart}}}
+    {{/hasattendees}}
+    {{^hasattendees}}
+        <div class="alert alert-info bbbext-bnx-datahub-dashboard__no-attendees" role="status">{{noattendees}}</div>
+    {{/hasattendees}}
+</section>
 
 <div class="bbbext-bnx-datahub-dashboard__metrics bbbext-bnx-datahub-dashboard__metrics--session">
     {{#sessionmetrics}}
@@ -118,7 +138,4 @@
             </tbody>
         </table>
     </div>
-{{/hasattendees}}
-{{^hasattendees}}
-    <div class="alert alert-info mb-0" role="status">{{noattendees}}</div>
 {{/hasattendees}}

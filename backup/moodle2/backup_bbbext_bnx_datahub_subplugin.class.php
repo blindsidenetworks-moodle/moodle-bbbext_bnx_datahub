@@ -53,6 +53,7 @@ class backup_bbbext_bnx_datahub_subplugin extends backup_subplugin {
             'timestart',
             'timeend',
             'duration',
+            'excluded',
             'metadata',
             'rawdata',
         ]);
@@ -86,7 +87,7 @@ class backup_bbbext_bnx_datahub_subplugin extends backup_subplugin {
 
         // Source: meetings linked via bbbext_bnx.bigbluebuttonbnid = activity id.
         $meetingsql = "SELECT m.id, m.bnxid, m.externalmeetingid, m.internalmeetingid,
-                              m.meetingname, m.timestart, m.timeend, m.duration,
+                              m.meetingname, m.timestart, m.timeend, m.duration, m.excluded,
                               m.metadata, m.rawdata
                          FROM {bbbext_bnx_datahub_meeting} m
                          JOIN {bbbext_bnx} b ON b.id = m.bnxid

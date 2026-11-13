@@ -78,6 +78,7 @@ class restore_bbbext_bnx_datahub_subplugin extends restore_subplugin {
         $record->timestart = $data->timestart;
         $record->timeend = $data->timeend;
         $record->duration = $data->duration;
+        $record->excluded = $data->excluded ?? 0;
         $record->metadata = $data->metadata ?? null;
         $record->rawdata = $data->rawdata ?? null;
 

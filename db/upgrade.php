@@ -86,5 +86,15 @@ function xmldb_bbbext_bnx_datahub_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026090400, 'bbbext', 'bnx_datahub');
     }
 
+    if ($oldversion < 2026110501) {
+        $dbman = $DB->get_manager();
+        $table = new xmldb_table('bbbext_bnx_datahub_meeting');
+        $field = new xmldb_field('excluded', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'duration');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_plugin_savepoint(true, 2026110501, 'bbbext', 'bnx_datahub');
+    }
+
     return true;
 }

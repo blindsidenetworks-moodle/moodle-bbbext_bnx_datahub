@@ -50,7 +50,7 @@ class meeting_service {
      * (OL-4.1.6).
      */
     private const MEETING_COLUMNS = "m.id, m.bnxid, m.externalmeetingid, m.internalmeetingid,
-        m.meetingname, m.timestart, m.timeend, m.duration, m.metadata, m.rawdata";
+        m.meetingname, m.timestart, m.timeend, m.duration, m.excluded, m.metadata, m.rawdata";
 
     /**
      * Return the most recent meeting for a given course module ID.

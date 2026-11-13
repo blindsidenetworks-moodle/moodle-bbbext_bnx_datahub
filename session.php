@@ -42,6 +42,13 @@ $PAGE->set_url(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/sessio
 ]));
 
 $data = \bbbext_bnx_datahub\local\services\dashboard_service::get_by_cmid((int) $cm->id, $meetingid);
-$dashboard = new \bbbext_bnx_datahub\output\dashboard($data, $cm->id);
+if (!$data->hasdata) {
+    exit;
+}
+$dashboard = new \bbbext_bnx_datahub\output\dashboard(
+    $data,
+    $cm->id,
+    has_capability('bbbext/bnx_datahub:manageexclusions', $context)
+);
 
 echo $OUTPUT->render_from_template('bbbext_bnx_datahub/session', $dashboard->export_session_for_template());

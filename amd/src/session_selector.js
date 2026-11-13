@@ -20,7 +20,7 @@
  * @copyright  2026 onwards, Blindside Networks Inc
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define([], function() {
+define([], () => {
     const SELECTORS = {
         session: '[data-region="bbbext-bnx-datahub-session"]',
         form: '.bbbext-bnx-datahub-dashboard__selector',
@@ -32,17 +32,27 @@ define([], function() {
             return;
         }
 
+        const form = session.querySelector(SELECTORS.form);
+        const button = form && form.querySelector('[data-action="show-session"]');
+        if (!form || !button || typeof form.requestSubmit !== 'function') {
+            return;
+        }
+
         session.addEventListener('change', event => {
             if (!event.target.matches('select[name="meetingid"]')) {
                 return;
             }
 
-            const form = event.target.closest(SELECTORS.form);
-            if (form && session.contains(form)) {
-                form.requestSubmit();
+            const selectedform = event.target.closest(SELECTORS.form);
+            if (selectedform && session.contains(selectedform)) {
+                selectedform.requestSubmit();
             }
         });
+        button.hidden = true;
+        button.classList.add('d-none');
     };
 
-    return {init};
+    return {
+        init,
+    };
 });

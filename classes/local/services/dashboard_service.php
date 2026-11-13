@@ -37,9 +37,13 @@ class dashboard_service {
     public static function get_by_cmid(int $cmid, int $selectedmeetingid = 0): \stdClass {
         global $DB;
 
-        $meetings = meeting_service::get_all_by_cmid($cmid);
+        $allmeetings = meeting_service::get_all_by_cmid($cmid);
+        $meetings = array_values(array_filter($allmeetings, static fn(\stdClass $meeting): bool => !(bool) $meeting->excluded));
+        $excludedcount = count($allmeetings) - count($meetings);
         if (empty($meetings)) {
-            return self::empty_data();
+            $data = self::empty_data();
+            $data->excludedcount = $excludedcount;
+            return $data;
         }
 
         $meetingids = array_map(static fn(\stdClass $meeting): int => (int) $meeting->id, $meetings);
@@ -96,7 +100,7 @@ class dashboard_service {
             $learners = $learnersbymeeting[(int) $meeting->id];
             $sessions[] = (object) [
                 'id' => (int) $meeting->id,
-                'label' => userdate((int) $meeting->timestart, get_string('strftimedateshort', 'langconfig')),
+                'label' => userdate((int) $meeting->timestart),
                 'learnercount' => count($learners),
                 'medianattendance' => self::median(array_map(
                     static fn(\stdClass $learner): int => (int) $learner->elapsedtime,
@@ -110,6 +114,7 @@ class dashboard_service {
 
         return (object) [
             'hasdata' => true,
+            'excludedcount' => $excludedcount,
             'meetingcount' => count($meetings),
             'uniquelearnercount' => count($uniqueusers),
             'medianattendance' => self::median($durations),

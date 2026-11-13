@@ -52,6 +52,9 @@ final class attendance_report_test extends advanced_testcase {
         );
 
         $this->assertInstanceOf(attendance::class, $report);
+        [$where, $params] = $report->get_base_condition();
+        $this->assertStringContainsString('.excluded', $where);
+        $this->assertContains(0, $params);
     }
 
     /**
