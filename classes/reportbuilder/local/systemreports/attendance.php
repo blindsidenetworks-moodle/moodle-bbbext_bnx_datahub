@@ -83,6 +83,7 @@ class attendance extends system_report {
         $meetingentity = new meeting();
         $meetingalias = $meetingentity->get_table_alias('bbbext_bnx_datahub_meeting');
         $this->add_entity($meetingentity);
+        $this->add_base_condition_simple("{$meetingalias}.excluded", 0);
         $this->add_join(
             "LEFT JOIN {bbbext_bnx_datahub_meeting} {$meetingalias} ON {$meetingalias}.id = {$attendeealias}.meetingid"
         );

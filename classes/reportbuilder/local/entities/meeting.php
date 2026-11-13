@@ -21,7 +21,7 @@ namespace bbbext_bnx_datahub\reportbuilder\local\entities;
 use lang_string;
 use stdClass;
 use core_reportbuilder\local\entities\base;
-use core_reportbuilder\local\filters\{date, text};
+use core_reportbuilder\local\filters\{boolean_select, date, text};
 use core_reportbuilder\local\helpers\format;
 use core_reportbuilder\local\report\{column, filter};
 
@@ -153,6 +153,17 @@ class meeting extends base {
             ->set_is_sortable(true)
             ->add_callback([format::class, 'userdate']);
 
+        $columns[] = (new column(
+            'excluded',
+            new lang_string('meetingexcluded', 'bbbext_bnx_datahub'),
+            $this->get_entity_name()
+        ))
+            ->add_joins($this->get_joins())
+            ->set_type(column::TYPE_BOOLEAN)
+            ->add_field("{$meetingalias}.excluded", 'excluded')
+            ->set_is_sortable(true)
+            ->add_callback([format::class, 'boolean_as_text']);
+
         return $columns;
     }
 
@@ -201,6 +212,14 @@ class meeting extends base {
                 date::DATE_PREVIOUS,
                 date::DATE_CURRENT,
             ]);
+
+        $filters[] = (new filter(
+            boolean_select::class,
+            'excluded',
+            new lang_string('meetingexcluded', 'bbbext_bnx_datahub'),
+            $this->get_entity_name(),
+            "{$meetingalias}.excluded"
+        ))->add_joins($this->get_joins());
 
         return $filters;
     }

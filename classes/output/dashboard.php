@@ -37,15 +37,20 @@ class dashboard implements renderable, templatable {
     /** @var int BigBlueButton course module ID. */
     private int $cmid;
 
+    /** @var bool Whether the current user can manage exclusions. */
+    private bool $canmanage;
+
     /**
      * Constructor.
      *
      * @param \stdClass $data Activity dashboard aggregate data.
      * @param int $cmid BigBlueButton course module ID.
+     * @param bool $canmanage Whether the current user can manage exclusions.
      */
-    public function __construct(\stdClass $data, int $cmid) {
+    public function __construct(\stdClass $data, int $cmid, bool $canmanage = false) {
         $this->data = $data;
         $this->cmid = $cmid;
+        $this->canmanage = $canmanage;
     }
 
     /**
@@ -69,11 +74,20 @@ class dashboard implements renderable, templatable {
             ))->out(false),
             'attendanceaction' => get_string('dashboard:viewattendance', 'bbbext_bnx_datahub'),
             'engagementaction' => get_string('dashboard:viewengagement', 'bbbext_bnx_datahub'),
+            'overalltitle' => get_string('dashboard:overallsummary', 'bbbext_bnx_datahub'),
+            'excludedurl' => (new moodle_url(
+                '/mod/bigbluebuttonbn/extension/bnx_datahub/excluded.php',
+                ['cmid' => $this->cmid]
+            ))->out(false),
+            'excludedlabel' => get_string('dashboard:excludedsessions', 'bbbext_bnx_datahub', $this->data->excludedcount ?? 0),
         ];
 
         if (!$this->data->hasdata) {
             $data->emptytitle = get_string('dashboard:emptytitle', 'bbbext_bnx_datahub');
-            $data->emptytext = get_string('dashboard:emptytext', 'bbbext_bnx_datahub');
+            $data->emptytext = get_string(
+                empty($this->data->excludedcount) ? 'dashboard:emptytext' : 'dashboard:allexcluded',
+                'bbbext_bnx_datahub'
+            );
             return $data;
         }
 
@@ -97,8 +111,8 @@ class dashboard implements renderable, templatable {
         ];
         $data->attendancechart = $output->render($this->attendance_chart());
         $data->engagementchart = $output->render($this->engagement_chart());
-        $data->learnerchart = $output->render($this->learner_chart());
         $data->session = $this->export_session_for_template();
+        $data->learnerchart = $data->session->learnerchart;
 
         return $data;
     }
@@ -109,11 +123,18 @@ class dashboard implements renderable, templatable {
      * @return \stdClass Template data.
      */
     public function export_session_for_template(): \stdClass {
+        global $OUTPUT;
+
         $data = (object) [];
         $data->sessiontitle = get_string('dashboard:sessionoverview', 'bbbext_bnx_datahub');
         $data->sessionselectorlabel = get_string('dashboard:selectsession', 'bbbext_bnx_datahub');
         $data->sessionselectaction = get_string('dashboard:show', 'bbbext_bnx_datahub');
         $data->cmid = $this->cmid;
+        $data->canmanage = $this->canmanage;
+        $data->selectedmeetingid = $this->data->selectedmeeting->id;
+        $data->sesskey = sesskey();
+        $data->excludeurl = (new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/excluded.php'))->out(false);
+        $data->excludeaction = get_string('dashboard:excludesession', 'bbbext_bnx_datahub');
         $data->sessionfragmenturl = (new moodle_url(
             '/mod/bigbluebuttonbn/extension/bnx_datahub/session.php',
             ['cmid' => $this->cmid]
@@ -155,6 +176,7 @@ class dashboard implements renderable, templatable {
         }, $this->data->selectedlearners);
         $data->hasattendees = !empty($data->attendees);
         $data->noattendees = get_string('dashboard:noattendees', 'bbbext_bnx_datahub');
+        $data->learnerchart = $data->hasattendees ? $OUTPUT->render($this->learner_chart()) : '';
 
         return $data;
     }

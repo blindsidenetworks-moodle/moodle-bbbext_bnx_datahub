@@ -42,6 +42,7 @@ final class dashboard_service_test extends advanced_testcase {
 
         parent::setUp();
         $this->resetAfterTest();
+        update_capabilities('bbbext_bnx_datahub');
         set_config('bigbluebuttonbn_meetingevents_enabled', 1);
 
         $course = $this->getDataGenerator()->create_course();
@@ -182,5 +183,179 @@ final class dashboard_service_test extends advanced_testcase {
         $this->assertSame($oldermeeting->id, $selected->selectedmeeting->id);
         $this->assertSame('User 10', $selected->selectedlearners[0]->fullname);
         $this->assertSame($latestmeeting->id, $invalid->selectedmeeting->id);
+    }
+
+    /**
+     * Test reversible exclusion and its effect on dashboard aggregation.
+     */
+    public function test_exclusion_and_restore(): void {
+        $this->setAdminUser();
+        $oldermeeting = $this->insert_meeting(1000);
+        $latestmeeting = $this->insert_meeting(2000);
+        $this->insert_attendee($oldermeeting->id, 10);
+        $this->insert_attendee($latestmeeting->id, 12);
+        $sink = $this->redirectEvents();
+
+        $this->assertTrue(exclusion_service::set_excluded($this->cmid, $latestmeeting->id, true));
+        $this->assertFalse(exclusion_service::set_excluded($this->cmid, $latestmeeting->id, true));
+        $data = dashboard_service::get_by_cmid($this->cmid, $latestmeeting->id);
+        $this->assertSame(1, $data->meetingcount);
+        $this->assertSame(1, $data->excludedcount);
+        $this->assertSame($oldermeeting->id, $data->selectedmeeting->id);
+        $this->assertSame(2, $data->metrics->chats);
+        $this->assertCount(2, meeting_service::get_all_by_cmid($this->cmid));
+
+        exclusion_service::set_excluded($this->cmid, $oldermeeting->id, true);
+        $data = dashboard_service::get_by_cmid($this->cmid);
+        $this->assertFalse($data->hasdata);
+        $this->assertSame(2, $data->excludedcount);
+        $this->assertTrue(exclusion_service::set_excluded($this->cmid, $latestmeeting->id, false));
+        $this->assertSame(1, dashboard_service::get_by_cmid($this->cmid)->meetingcount);
+        $this->assertCount(3, $sink->get_events());
+        $sink->close();
+    }
+
+    /**
+     * Meetings from another activity cannot be changed through this activity.
+     */
+    public function test_exclusion_rejects_other_activity(): void {
+        $this->setAdminUser();
+        $meeting = $this->insert_meeting(1000);
+        $course = $this->getDataGenerator()->create_course();
+        $other = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+        $cm = get_coursemodule_from_instance('bigbluebuttonbn', $other->id);
+        $this->expectException(\moodle_exception::class);
+        exclusion_service::set_excluded((int) $cm->id, $meeting->id, true);
+    }
+
+    /**
+     * A user without the write capability cannot change exclusion state.
+     */
+    public function test_exclusion_requires_capability(): void {
+        $meeting = $this->insert_meeting(1000);
+        $this->setUser($this->getDataGenerator()->create_user());
+        $this->expectException(\core\exception\required_capability_exception::class);
+        exclusion_service::set_excluded($this->cmid, $meeting->id, true);
+    }
+
+    /**
+     * Built-in reports omit excluded meetings in both system and module contexts.
+     */
+    public function test_builtin_reports_omit_excluded_meetings(): void {
+        global $DB, $PAGE;
+
+        $this->setAdminUser();
+        $included = $this->insert_meeting(1000);
+        $excluded = $this->insert_meeting(2000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Included session', ['id' => $included->id]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Excluded session', ['id' => $excluded->id]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'excluded', 1, ['id' => $excluded->id]);
+        $this->insert_attendee($included->id, 10);
+        $this->insert_attendee($excluded->id, 12);
+        $PAGE->set_url(new \moodle_url('/'));
+
+        foreach ([\context_system::instance(), \context_module::instance($this->cmid)] as $context) {
+            foreach (
+                [
+                \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
+                \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
+                ] as $reportclass
+            ) {
+                $report = \core_reportbuilder\system_report_factory::create($reportclass, $context);
+                $content = $report->output();
+                $this->assertStringContainsString('Included session', $content);
+                $this->assertStringNotContainsString('Excluded session', $content);
+            }
+        }
+    }
+
+    /**
+     * Exclusion state survives a course backup and restore.
+     */
+    public function test_exclusion_survives_backup_restore(): void {
+        global $CFG, $DB, $USER;
+
+        require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+        require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
+        $this->setAdminUser();
+        unset_config('disabled', 'bbbext_bnx');
+        unset_config('disabled', 'bbbext_bnx_datahub');
+        $meeting = $this->insert_meeting(1000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'excluded', 1, ['id' => $meeting->id]);
+        $cm = get_coursemodule_from_id('bigbluebuttonbn', $this->cmid, 0, false, MUST_EXIST);
+        $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+
+        $controller = new \backup_controller(
+            \backup::TYPE_1COURSE,
+            $course->id,
+            \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id
+        );
+        $controller->execute_plan();
+        $backupfile = $controller->get_results()['backup_destination'];
+        $backupfile->extract_to_pathname(
+            get_file_packer('application/vnd.moodle.backup'),
+            $CFG->dataroot . '/temp/backup/datahub-exclusion-test'
+        );
+        $controller->destroy();
+
+        $newcourseid = \restore_dbops::create_new_course($course->fullname, $course->shortname . '_copy', $course->category);
+        $restore = new \restore_controller(
+            'datahub-exclusion-test',
+            $newcourseid,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id,
+            \backup::TARGET_NEW_COURSE
+        );
+        $this->assertTrue($restore->execute_precheck());
+        $restore->execute_plan();
+        $restore->destroy();
+        $restoredcm = null;
+        foreach (get_fast_modinfo($newcourseid)->get_cms() as $candidate) {
+            if ($candidate->modname === 'bigbluebuttonbn') {
+                $restoredcm = $candidate;
+            }
+        }
+        $this->assertNotNull($restoredcm);
+        $restored = meeting_service::get_all_by_cmid($restoredcm->id);
+        $this->assertCount(1, $restored);
+        $this->assertSame(1, (int) $restored[0]->excluded);
+
+        $oldpath = $CFG->dataroot . '/temp/backup/datahub-old-exclusion-test';
+        $backupfile->extract_to_pathname(get_file_packer('application/vnd.moodle.backup'), $oldpath);
+        $files = glob($oldpath . '/activities/bigbluebuttonbn_*/bigbluebuttonbn.xml');
+        $this->assertCount(1, $files);
+        $document = new \DOMDocument();
+        $this->assertTrue($document->load($files[0]));
+        $nodes = (new \DOMXPath($document))->query('//bbbext_bnx_datahub_meetings/meeting/excluded');
+        $this->assertCount(1, $nodes);
+        $nodes->item(0)->parentNode->removeChild($nodes->item(0));
+        $document->save($files[0]);
+
+        $oldcourseid = \restore_dbops::create_new_course($course->fullname, $course->shortname . '_old', $course->category);
+        $oldrestore = new \restore_controller(
+            'datahub-old-exclusion-test',
+            $oldcourseid,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id,
+            \backup::TARGET_NEW_COURSE
+        );
+        $this->assertTrue($oldrestore->execute_precheck());
+        $oldrestore->execute_plan();
+        $oldrestore->destroy();
+        $oldcm = null;
+        foreach (get_fast_modinfo($oldcourseid)->get_cms() as $candidate) {
+            if ($candidate->modname === 'bigbluebuttonbn') {
+                $oldcm = $candidate;
+            }
+        }
+        $this->assertNotNull($oldcm);
+        $oldrestored = meeting_service::get_all_by_cmid($oldcm->id);
+        $this->assertCount(1, $oldrestored);
+        $this->assertSame(0, (int) $oldrestored[0]->excluded);
     }
 }

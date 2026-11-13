@@ -47,7 +47,11 @@ $PAGE->requires->css(new moodle_url('/mod/bigbluebuttonbn/extension/bnx_datahub/
 $PAGE->requires->js_call_amd('bbbext_bnx_datahub/session_selector', 'init');
 
 $data = \bbbext_bnx_datahub\local\services\dashboard_service::get_by_cmid((int) $cm->id, $meetingid);
-$dashboard = new \bbbext_bnx_datahub\output\dashboard($data, $cm->id);
+$dashboard = new \bbbext_bnx_datahub\output\dashboard(
+    $data,
+    $cm->id,
+    has_capability('bbbext/bnx_datahub:manageexclusions', $context)
+);
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('bbbext_bnx_datahub/dashboard', $dashboard->export_for_template($OUTPUT));

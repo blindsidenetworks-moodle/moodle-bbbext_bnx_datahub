@@ -123,6 +123,39 @@ class behat_bbbext_bnx_datahub extends behat_base {
     }
 
     /**
+     * Select a meeting in the dashboard session selector.
+     *
+     * @When /^I select the dashboard session "(?P<meetingname>(?:[^"]|\\")*)"$/
+     * @param string $meetingname The meeting name.
+     */
+    public function i_select_the_dashboard_session(string $meetingname): void {
+        global $DB;
+
+        $meetingid = $DB->get_field('bbbext_bnx_datahub_meeting', 'id', ['meetingname' => $meetingname], MUST_EXIST);
+        $this->find('css', 'select[name="meetingid"]')->selectOption((string) $meetingid);
+    }
+
+    /**
+     * Submit the exclusion form with an invalid session key.
+     *
+     * @When I submit the exclusion form with an invalid session key
+     */
+    public function i_submit_exclusion_with_invalid_session_key(): void {
+        $this->getSession()->executeScript(<<<'JS'
+            const form = document.querySelector('form:has(input[name="action"][value="exclude"])');
+            const data = new URLSearchParams(new FormData(form));
+            data.set('sesskey', 'invalid');
+            fetch(form.getAttribute('action'), {method: 'POST', body: data, credentials: 'same-origin'})
+                .then(response => response.text())
+                .then(text => {
+                    const result = document.createElement('span');
+                    result.textContent = 'Invalid session key rejected: ' + text.includes('Your session has most likely timed out');
+                    document.body.append(result);
+                });
+            JS);
+    }
+
+    /**
      * Navigate to the attendance report for a BigBlueButton activity.
      *
      * @When /^I navigate to the attendance report for "(?P<activityname>(?:[^"]|\\")*)"$/

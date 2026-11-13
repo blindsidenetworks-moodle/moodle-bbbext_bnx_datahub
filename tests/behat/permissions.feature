@@ -95,6 +95,18 @@ Feature: BigBlueButton Data Hub permissions
     Then "Attendance report" "link" should not exist
     And "Engagement report" "link" should not exist
 
+  Scenario: Report viewer cannot exclude sessions
+    Given the following "role capability" exists:
+      | role                              | editingteacher |
+      | bbbext/bnx_datahub:manageexclusions | prohibit       |
+    And I change window size to "large"
+    And I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
+    When I click on "Dashboard +" "link"
+    Then I should see "Session summary"
+    And "Exclude session" "button" should not exist
+    When I click on "Excluded sessions (0)" "link"
+    Then I should see "There are no excluded sessions."
+
   Scenario: Guest user cannot access attendance report
     Given I change window size to "large"
     And I log out

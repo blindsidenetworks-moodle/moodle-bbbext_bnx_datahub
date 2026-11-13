@@ -27,6 +27,14 @@
     gap: 0.5rem;
 }
 
+.bbbext-bnx-datahub-dashboard__summary-header {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
 .bbbext-bnx-datahub-dashboard__metrics {
     display: grid;
     gap: 0.75rem;
@@ -62,6 +70,10 @@
 
 .bbbext-bnx-datahub-dashboard__chart {
     min-width: 0;
+}
+
+.bbbext-bnx-datahub-dashboard__chart .bbbext-bnx-datahub-dashboard__no-attendees {
+    margin-bottom: 1.25rem;
 }
 
 .bbbext-bnx-datahub-dashboard__chart .chart-area {
@@ -108,6 +120,14 @@
     flex-shrink: 0;
     gap: 0.5rem;
     grid-template-columns: minmax(12rem, 1fr) auto;
+}
+
+.bbbext-bnx-datahub-dashboard__session-actions {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
 }
 
 .bbbext-bnx-datahub-dashboard__selector label {
@@ -157,5 +177,10 @@
     .bbbext-bnx-datahub-dashboard__selector {
         grid-template-columns: minmax(0, 1fr) auto;
         width: 100%;
+    }
+
+    .bbbext-bnx-datahub-dashboard__session-actions {
+        align-items: stretch;
+        flex-direction: column;
     }
 }
