@@ -197,6 +197,24 @@ final class logger_test extends advanced_testcase {
     }
 
     /**
+     * Test attendee logging rejects missing meeting records.
+     */
+    public function test_log_meeting_users_rejects_missing_meeting(): void {
+        global $DB;
+
+        $user = $this->getDataGenerator()->create_user();
+        $attendee = $this->create_attendee_data($user->id);
+
+        foreach ([0, -1, 987654321] as $meetingid) {
+            $result = logger::log_meeting_users($meetingid, [$attendee, $attendee]);
+            $this->assertSame(['ids' => [], 'skipped' => 2], $result);
+            $this->assertSame(0, logger::log_meeting_user($meetingid, $attendee));
+        }
+
+        $this->assertSame(0, $DB->count_records('bbbext_bnx_datahub_meeting_user'));
+    }
+
+    /**
      * Test log_meeting_user creates a new attendee record.
      */
     public function test_log_meeting_user_creates_record(): void {

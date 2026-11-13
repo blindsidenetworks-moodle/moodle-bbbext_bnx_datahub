@@ -65,6 +65,20 @@ Review the result and leave the legacy reporting sidecar disabled after a
 successful migration. Running both reporting engines can produce confusing or
 duplicate operational data.
 
+## Orphan attendee cleanup
+
+Older DataHub versions may have stored attendee records without a meeting.
+Back up the site before cleanup. Preview the number of records without changing
+data:
+
+```bash
+php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/cleanup_orphan_attendees.php
+```
+
+To delete those records, run the same command with `--apply`. Deletion is
+irreversible. The command removes only attendees whose meeting does not exist;
+it does not remove meetings or attendees linked to an existing meeting.
+
 ## Troubleshooting
 
 | Symptom | Check |

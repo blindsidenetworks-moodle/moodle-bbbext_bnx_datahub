@@ -164,6 +164,32 @@ final class broker_meeting_events_addons_test extends advanced_testcase {
     }
 
     /**
+     * Test callbacks do not store attendees when the activity has no BNX record.
+     */
+    public function test_process_action_skips_without_bnx_record(): void {
+        global $DB;
+
+        $this->enable_bnx_plugin();
+        [$course, $bbb, $instance] = $this->create_bbb_with_bnx();
+        $DB->delete_records('bbbext_bnx', ['bigbluebuttonbnid' => $bbb->id]);
+
+        $user = $this->getDataGenerator()->create_user();
+        $jsondata = $this->create_meeting_events_json([$this->create_attendee_data($user->id)]);
+        $addon = new broker_meeting_events_addons($instance, $jsondata);
+
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $addon->process_action();
+            $this->assertDebuggingCalled(
+                '[bbbext_bnx_datahub] logger::log_meeting No BNX record found for instance.',
+                DEBUG_DEVELOPER
+            );
+        }
+
+        $this->assertSame(0, $DB->count_records('bbbext_bnx_datahub_meeting'));
+        $this->assertSame(0, $DB->count_records('bbbext_bnx_datahub_meeting_user'));
+    }
+
+    /**
      * Test process_action logs meeting when BNX is enabled.
      */
     public function test_process_action_logs_meeting_when_bnx_enabled(): void {

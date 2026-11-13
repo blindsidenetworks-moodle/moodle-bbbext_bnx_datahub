@@ -52,6 +52,10 @@ class broker_meeting_events_addons extends \mod_bigbluebuttonbn\local\extension\
         $meetingdata = json_decode(json_encode($jsonobj));
         $meetingid = logger::log_meeting($this->instance, $meetingdata);
 
+        if (!$meetingid) {
+            return;
+        }
+
         if (!empty($jsonobj->data->attendees) && is_array($jsonobj->data->attendees)) {
             // Batch all attendees in a single call so user lookups and existing-row
             // resolution are amortized to one DB round-trip per query (OL-3.1.2).

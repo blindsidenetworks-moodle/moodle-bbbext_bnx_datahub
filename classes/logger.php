@@ -126,6 +126,10 @@ class logger {
             return ['ids' => $ids, 'skipped' => $skipped];
         }
 
+        if ($meetingid <= 0 || !$DB->record_exists('bbbext_bnx_datahub_meeting', ['id' => $meetingid])) {
+            return ['ids' => $ids, 'skipped' => count($attendees)];
+        }
+
         // Filter to numeric ext_user_ids so we can resolve them via core_user
         // without per-row lookups; skip non-Moodle participants such as AI bots.
         $eligible = [];
