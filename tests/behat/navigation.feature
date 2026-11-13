@@ -38,6 +38,25 @@ Feature: BigBlueButton Data Hub navigation
     When I click on "Dashboard +" "link"
     Then I should see "DataHub dashboard +"
 
+  Scenario: Session selection updates the learner participation chart
+    Given the following meeting data exists for BigBlueButton activity "Test Meeting":
+      | meetingname       | timestart           | timeend             |
+      | Populated session | 2026-01-01 10:00:00 | 2026-01-01 11:00:00 |
+      | Empty session     | 2026-01-02 10:00:00 | 2026-01-02 11:00:00 |
+    And the following attendee data exists for meeting "Populated session":
+      | username | role   | engchats |
+      | student1 | viewer | 2        |
+    And I change window size to "large"
+    And I am on the "Test Meeting" "bigbluebuttonbn activity" page logged in as "teacher1"
+    When I click on "Dashboard +" "link"
+    Then I should see "No learner attendance was recorded for this session." in the ".bbbext-bnx-datahub-dashboard__chart--wide" "css_element"
+    When I select the dashboard session "Populated session"
+    Then I should see "Populated session"
+    And I click on "Show chart data" "link" in the ".bbbext-bnx-datahub-dashboard__chart--wide" "css_element"
+    And I should see "Student 1" in the ".bbbext-bnx-datahub-dashboard__chart--wide" "css_element"
+    When I select the dashboard session "Empty session"
+    Then I should see "No learner attendance was recorded for this session." in the ".bbbext-bnx-datahub-dashboard__chart--wide" "css_element"
+
   Scenario: Dashboard is not visible when meeting events disabled
     Given the following config values are set as admin:
       | bigbluebuttonbn_meetingevents_enabled | 0 |

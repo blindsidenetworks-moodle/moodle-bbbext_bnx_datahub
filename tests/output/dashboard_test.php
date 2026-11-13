@@ -50,7 +50,7 @@ final class dashboard_test extends advanced_testcase {
     public function test_export_populated_dashboard(): void {
         global $OUTPUT;
 
-        $dashboard = new dashboard((object) [
+        $input = (object) [
             'hasdata' => true,
             'meetingcount' => 2,
             'uniquelearnercount' => 3,
@@ -98,7 +98,8 @@ final class dashboard_test extends advanced_testcase {
                     'pollvotes' => 2,
                 ],
             ],
-        ], 42);
+        ];
+        $dashboard = new dashboard($input, 42);
         $data = $dashboard->export_for_template($OUTPUT);
 
         $this->assertTrue($data->hasdata);
@@ -111,5 +112,14 @@ final class dashboard_test extends advanced_testcase {
         $this->assertSame('Ada Lovelace', $data->session->attendees[0]->fullname);
         $this->assertTrue($data->session->sessions[0]->selected);
         $this->assertStringContainsString('session.php?cmid=42', $data->session->sessionfragmenturl);
+        $html = $OUTPUT->render_from_template('bbbext_bnx_datahub/dashboard', $data);
+        $this->assertStringContainsString('chart-area', $html);
+
+        $input->selectedlearners = [];
+        $emptydata = (new dashboard($input, 42))->export_for_template($OUTPUT);
+        $this->assertSame('', $emptydata->learnerchart);
+        $this->assertFalse($emptydata->session->hasattendees);
+        $emptyhtml = $OUTPUT->render_from_template('bbbext_bnx_datahub/dashboard', $emptydata);
+        $this->assertStringContainsString($emptydata->session->noattendees, $emptyhtml);
     }
 }

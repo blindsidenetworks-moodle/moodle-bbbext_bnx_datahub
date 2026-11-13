@@ -123,6 +123,19 @@ class behat_bbbext_bnx_datahub extends behat_base {
     }
 
     /**
+     * Select a meeting in the dashboard session selector.
+     *
+     * @When /^I select the dashboard session "(?P<meetingname>(?:[^"]|\\")*)"$/
+     * @param string $meetingname The meeting name.
+     */
+    public function i_select_the_dashboard_session(string $meetingname): void {
+        global $DB;
+
+        $meetingid = $DB->get_field('bbbext_bnx_datahub_meeting', 'id', ['meetingname' => $meetingname], MUST_EXIST);
+        $this->find('css', 'select[name="meetingid"]')->selectOption((string) $meetingid);
+    }
+
+    /**
      * Navigate to the attendance report for a BigBlueButton activity.
      *
      * @When /^I navigate to the attendance report for "(?P<activityname>(?:[^"]|\\")*)"$/

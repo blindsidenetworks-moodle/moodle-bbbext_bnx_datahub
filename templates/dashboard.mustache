@@ -98,7 +98,12 @@
                 {{{engagementchart}}}
             </section>
             <section class="bbbext-bnx-datahub-dashboard__chart bbbext-bnx-datahub-dashboard__chart--wide">
-                {{{learnerchart}}}
+                {{#session.hasattendees}}
+                    {{{learnerchart}}}
+                {{/session.hasattendees}}
+                {{^session.hasattendees}}
+                    <div class="alert alert-info mb-0" role="status">{{session.noattendees}}</div>
+                {{/session.hasattendees}}
             </section>
         </div>
 

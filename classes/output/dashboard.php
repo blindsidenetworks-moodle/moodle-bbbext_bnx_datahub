@@ -97,7 +97,7 @@ class dashboard implements renderable, templatable {
         ];
         $data->attendancechart = $output->render($this->attendance_chart());
         $data->engagementchart = $output->render($this->engagement_chart());
-        $data->learnerchart = $output->render($this->learner_chart());
+        $data->learnerchart = empty($this->data->selectedlearners) ? '' : $output->render($this->learner_chart());
         $data->session = $this->export_session_for_template();
 
         return $data;
