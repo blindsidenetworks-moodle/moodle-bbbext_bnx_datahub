@@ -169,6 +169,104 @@ final class dashboard_service_test extends advanced_testcase {
     }
 
     /**
+     * Current activity reports expose all groups to viewers with the reporting capability.
+     */
+    public function test_activity_reports_currently_include_all_groups(): void {
+        global $DB, $PAGE;
+
+        $generator = $this->getDataGenerator();
+        $cm = get_coursemodule_from_id('bigbluebuttonbn', $this->cmid, 0, false, MUST_EXIST);
+        $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+        $coursecontext = \context_course::instance($course->id);
+        $modulecontext = \context_module::instance($this->cmid);
+        $groupone = $generator->create_group(['courseid' => $course->id]);
+        $grouptwo = $generator->create_group(['courseid' => $course->id]);
+        $firstlearner = $generator->create_user(['firstname' => 'Firstgroup', 'lastname' => 'Learner']);
+        $secondlearner = $generator->create_user(['firstname' => 'Secondgroup', 'lastname' => 'Learner']);
+        $restrictedviewer = $generator->create_user();
+        $allgroupsviewer = $generator->create_user();
+        foreach ([$firstlearner, $secondlearner, $restrictedviewer] as $user) {
+            $generator->enrol_user($user->id, $course->id, 'student');
+        }
+        $generator->enrol_user($allgroupsviewer->id, $course->id, 'editingteacher');
+        $generator->create_group_member(['groupid' => $groupone->id, 'userid' => $firstlearner->id]);
+        $generator->create_group_member(['groupid' => $groupone->id, 'userid' => $restrictedviewer->id]);
+        $generator->create_group_member(['groupid' => $grouptwo->id, 'userid' => $secondlearner->id]);
+        $roleid = create_role('Group report viewer', 'groupreportviewer', 'Group report viewer');
+        assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $roleid, $coursecontext->id);
+        role_assign($roleid, $restrictedviewer->id, $coursecontext->id);
+        $meeting = $this->insert_meeting(1000);
+        $this->insert_attendee($meeting->id, $firstlearner->id);
+        $this->insert_attendee($meeting->id, $secondlearner->id);
+        $PAGE->set_url(new \moodle_url('/'));
+
+        foreach ([SEPARATEGROUPS, VISIBLEGROUPS] as $groupmode) {
+            $DB->set_field('course_modules', 'groupmode', $groupmode, ['id' => $this->cmid]);
+            rebuild_course_cache($course->id, true);
+            $currentcm = get_fast_modinfo($course)->get_cm($this->cmid);
+            $this->assertSame($groupmode, (int) groups_get_activity_groupmode($currentcm));
+            foreach ([[$restrictedviewer, false], [$allgroupsviewer, true]] as [$viewer, $accessallgroups]) {
+                $this->setUser($viewer);
+                $this->assertTrue(has_capability('bbbext/bnx_datahub:viewreports', $modulecontext));
+                $this->assertSame($accessallgroups, has_capability('moodle/site:accessallgroups', $modulecontext));
+                $data = dashboard_service::get_by_cmid($this->cmid);
+                $this->assertSame(2, $data->uniquelearnercount);
+                $this->assertCount(2, $data->selectedlearners);
+                foreach (
+                    [
+                        \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
+                        \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
+                    ] as $reportclass
+                ) {
+                    $report = \core_reportbuilder\system_report_factory::create($reportclass, $modulecontext);
+                    $content = $report->output();
+                    $this->assertStringContainsString('Firstgroup', $content);
+                    $this->assertStringContainsString('Secondgroup', $content);
+                }
+            }
+        }
+    }
+
+    /**
+     * Built-in reports scope module views to the activity and system views to the site.
+     */
+    public function test_builtin_report_activity_and_system_scope(): void {
+        global $DB, $PAGE;
+
+        $this->setAdminUser();
+        $firstmeeting = $this->insert_meeting(1000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'First activity session', ['id' => $firstmeeting->id]);
+        $firstuser = $this->getDataGenerator()->create_user();
+        $this->insert_attendee($firstmeeting->id, $firstuser->id);
+        $course = $this->getDataGenerator()->create_course();
+        $other = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+        $this->bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $other->id], '*', MUST_EXIST);
+        $secondmeeting = $this->insert_meeting(2000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Second activity session', ['id' => $secondmeeting->id]);
+        $seconduser = $this->getDataGenerator()->create_user();
+        $this->insert_attendee($secondmeeting->id, $seconduser->id);
+        $PAGE->set_url(new \moodle_url('/'));
+
+        foreach ([\context_system::instance(), \context_module::instance($this->cmid)] as $context) {
+            foreach (
+                [
+                    \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
+                    \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
+                ] as $reportclass
+            ) {
+                $report = \core_reportbuilder\system_report_factory::create($reportclass, $context);
+                $content = $report->output();
+                $this->assertStringContainsString('First activity session', $content);
+                if ($context->contextlevel === CONTEXT_SYSTEM) {
+                    $this->assertStringContainsString('Second activity session', $content);
+                } else {
+                    $this->assertStringNotContainsString('Second activity session', $content);
+                }
+            }
+        }
+    }
+
+    /**
      * A meeting can be selected only when it belongs to the activity.
      */
     public function test_get_by_cmid_selects_activity_meeting(): void {

@@ -228,6 +228,19 @@ final class attendance_report_test extends advanced_testcase {
     }
 
     /**
+     * A course-level reporting grant does not allow the site-wide report.
+     */
+    public function test_course_reporting_grant_does_not_allow_sitewide_report(): void {
+        [$context, $user] = $this->create_report_context_and_user(true);
+        $this->setUser($user);
+        $this->assertTrue(has_capability('bbbext/bnx_datahub:viewreports', $context));
+        $this->assertFalse(has_capability('bbbext/bnx_datahub:viewreports', context_system::instance()));
+
+        $this->expectException(report_access_exception::class);
+        \core_reportbuilder\system_report_factory::create(attendance::class, context_system::instance());
+    }
+
+    /**
      * Test attendance report with module context parameter.
      */
     public function test_report_with_bigbluebuttonbnid_parameter(): void {

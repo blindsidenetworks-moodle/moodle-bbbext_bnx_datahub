@@ -37,6 +37,13 @@ Moodle refreshes capability metadata during a plugin upgrade. Deployments that
 replace files without a plugin version change do not automatically receive the
 updated risk flag; a cache purge alone does not update the stored metadata.
 
+The dashboard and built-in activity reports show all attendees for the activity,
+regardless of group mode or the viewer's group membership. In separate-groups
+courses, a viewer with report access can therefore see learners in other groups
+even without `moodle/site:accessallgroups`. Limit report access to trusted roles.
+The built-in attendance and engagement pages accessed without an activity ID
+show site-wide data and require the report capability at system context.
+
 The reports use Moodle Report Builder. They display session attendance and
 engagement collected from BigBlueButton meeting-event callbacks. Use Moodle's
 normal report filters and downloads; DataHub does not expose a separate
