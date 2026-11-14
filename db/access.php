@@ -28,7 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 $capabilities = [
     // Ability to view reports on bigbluebuttonbn instances.
     'bbbext/bnx_datahub:viewreports' => [
-        'riskbitmask' => RISK_XSS,
+        'riskbitmask' => RISK_PERSONAL,
         'captype' => 'read',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [

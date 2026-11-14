@@ -43,6 +43,54 @@ final class attendance_report_test extends advanced_testcase {
     }
 
     /**
+     * Refreshing the reporting capability updates risk metadata without changing existing role permissions.
+     */
+    public function test_viewreports_risk_metadata_refresh(): void {
+        global $DB;
+
+        $capability = 'bbbext/bnx_datahub:viewreports';
+        $roleid = create_role('Custom report role', 'customreportrole', 'Custom report role');
+        $context = context_system::instance();
+        assign_capability('moodle/course:manageactivities', CAP_ALLOW, $roleid, $context->id);
+        assign_capability($capability, CAP_PREVENT, $roleid, $context->id);
+        $DB->set_field('capabilities', 'riskbitmask', RISK_XSS, ['name' => $capability]);
+
+        update_capabilities('bbbext_bnx_datahub');
+
+        $this->assertEquals(RISK_PERSONAL, $DB->get_field('capabilities', 'riskbitmask', ['name' => $capability]));
+        $this->assertEquals(CAP_PREVENT, $DB->get_field('role_capabilities', 'permission', [
+            'roleid' => $roleid,
+            'contextid' => $context->id,
+            'capability' => $capability,
+        ]));
+        $definition = load_capability_def('bbbext_bnx_datahub');
+        $this->assertSame('moodle/course:manageactivities', $definition[$capability]['clonepermissionsfrom']);
+    }
+
+    /**
+     * Initial capability registration clones custom role permissions at their original context.
+     */
+    public function test_viewreports_clones_custom_role_permissions(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $context = context_course::instance($course->id);
+        $roleid = create_role('Custom activity role', 'customactivityrole', 'Custom activity role');
+        assign_capability('moodle/course:manageactivities', CAP_ALLOW, $roleid, $context->id);
+        $capability = 'bbbext/bnx_datahub:viewreports';
+        $DB->delete_records('capabilities', ['name' => $capability]);
+
+        update_capabilities('bbbext_bnx_datahub');
+
+        $this->assertEquals(CAP_ALLOW, $DB->get_field('role_capabilities', 'permission', [
+            'roleid' => $roleid,
+            'contextid' => $context->id,
+            'capability' => $capability,
+        ]));
+        $this->assertEquals(RISK_PERSONAL, $DB->get_field('capabilities', 'riskbitmask', ['name' => $capability]));
+    }
+
+    /**
      * Test that attendance report can be instantiated.
      */
     public function test_report_instantiation(): void {

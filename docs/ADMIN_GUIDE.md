@@ -26,8 +26,16 @@ the **Dashboard +** link. The dashboard summarizes activity attendance and
 engagement across sessions, and provides a selectable session overview with
 learner participation details. Attendance and engagement Report Builder pages
 remain available as detailed reports from the dashboard. Report access requires
-`bbbext/bnx_datahub:viewreports`, which is granted by default to managers,
-editing teachers, and administrators at course context.
+`bbbext/bnx_datahub:viewreports`. When Moodle first registers this capability,
+it clones existing role permissions for `moodle/course:manageactivities`,
+including custom role assignments and context overrides. Review these grants
+for roles that should not see attendance and engagement data. Subsequent changes
+to the source capability do not automatically update existing report grants.
+The capability is marked as a personal-data risk.
+
+Moodle refreshes capability metadata during a plugin upgrade. Deployments that
+replace files without a plugin version change do not automatically receive the
+updated risk flag; a cache purge alone does not update the stored metadata.
 
 The reports use Moodle Report Builder. They display session attendance and
 engagement collected from BigBlueButton meeting-event callbacks. Use Moodle's
