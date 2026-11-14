@@ -267,6 +267,85 @@ final class dashboard_service_test extends advanced_testcase {
     }
 
     /**
+     * Custom report audiences can see cross-activity data without the DataHub reporting capability.
+     */
+    public function test_custom_report_datasource_access_and_audience(): void {
+        global $DB, $PAGE;
+
+        $this->setAdminUser();
+        $firstmeeting = $this->insert_meeting(1000);
+        $firstuser = $this->getDataGenerator()->create_user();
+        $this->insert_attendee($firstmeeting->id, $firstuser->id);
+        $course = $this->getDataGenerator()->create_course();
+        $other = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+        $this->bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $other->id], '*', MUST_EXIST);
+        $secondmeeting = $this->insert_meeting(2000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'excluded', 1, ['id' => $secondmeeting->id]);
+        $seconduser = $this->getDataGenerator()->create_user();
+        $this->insert_attendee($secondmeeting->id, $seconduser->id);
+
+        $editor = $this->getDataGenerator()->create_user();
+        $recipient = $this->getDataGenerator()->create_user();
+        $outsider = $this->getDataGenerator()->create_user();
+        $blockedrecipient = $this->getDataGenerator()->create_user();
+        $systemcontext = \context_system::instance();
+        $editorrole = create_role('Report editor', 'datahubreporteditor', 'Report editor');
+        assign_capability('moodle/reportbuilder:edit', CAP_ALLOW, $editorrole, $systemcontext->id);
+        assign_capability('moodle/user:viewalldetails', CAP_ALLOW, $editorrole, $systemcontext->id);
+        role_assign($editorrole, $editor->id, $systemcontext->id);
+        $viewerrole = create_role('Report viewer', 'datahubcustomviewer', 'Report viewer');
+        assign_capability('moodle/reportbuilder:view', CAP_ALLOW, $viewerrole, $systemcontext->id);
+        role_assign($viewerrole, $recipient->id, $systemcontext->id);
+        role_assign($viewerrole, $outsider->id, $systemcontext->id);
+        $blockedrole = create_role('Blocked report viewer', 'datahubblockedviewer', 'Blocked report viewer');
+        assign_capability('moodle/reportbuilder:view', CAP_PROHIBIT, $blockedrole, $systemcontext->id);
+        role_assign($blockedrole, $blockedrecipient->id, $systemcontext->id);
+        $PAGE->set_url(new \moodle_url('/'));
+        $this->setUser($editor);
+        $this->assertFalse(has_capability('bbbext/bnx_datahub:viewreports', $systemcontext));
+        $this->assertTrue(\core_reportbuilder\permission::can_create_report());
+        $generator = $this->getDataGenerator()->get_plugin_generator('core_reportbuilder');
+        $report = $generator->create_report([
+            'name' => 'DataHub attendees',
+            'source' => \bbbext_bnx_datahub\reportbuilder\datasource\attendees::class,
+        ]);
+        $generator->create_column(['reportid' => $report->get('id'), 'uniqueidentifier' => 'attendee:fullname']);
+        $audience = $generator->create_audience([
+            'reportid' => $report->get('id'),
+            'classname' => \core_reportbuilder\reportbuilder\audience\manual::class,
+            'configdata' => ['users' => [$recipient->id, $blockedrecipient->id]],
+        ]);
+        $this->assertTrue($audience->user_can_add());
+        $this->assertTrue(\core_reportbuilder\permission::can_edit_report($report));
+        $this->setUser($outsider);
+        $this->assertFalse(\core_reportbuilder\permission::can_create_report());
+        $this->assertFalse(\core_reportbuilder\permission::can_edit_report($report));
+        $this->assertFalse(\core_reportbuilder\permission::can_view_report($report));
+        $this->setUser($blockedrecipient);
+        $this->assertFalse(\core_reportbuilder\permission::can_view_report($report));
+        $this->setUser($recipient);
+        $this->assertFalse(has_capability('bbbext/bnx_datahub:viewreports', $systemcontext));
+        $this->assertFalse(has_capability('bbbext/bnx_datahub:viewreports', \context_module::instance($this->cmid)));
+        $othercm = get_coursemodule_from_instance('bigbluebuttonbn', $other->id, 0, false, MUST_EXIST);
+        $this->assertFalse(has_capability('bbbext/bnx_datahub:viewreports', \context_module::instance($othercm->id)));
+        $this->assertTrue(\core_reportbuilder\permission::can_view_report($report));
+
+        $table = \core_reportbuilder\table\custom_report_table_view::create($report->get('id'));
+        $this->assertTrue($table->has_capability());
+        $table->setup();
+        $table->query_db(30, false);
+        $rows = [];
+        foreach ($table->rawdata as $row) {
+            $rows[] = implode(' ', $table->format_row($row));
+        }
+        $table->close_recordset();
+        $content = implode(' ', $rows);
+        $this->assertCount(2, $rows);
+        $this->assertStringContainsString('User ' . $firstuser->id, $content);
+        $this->assertStringContainsString('User ' . $seconduser->id, $content);
+    }
+
+    /**
      * A meeting can be selected only when it belongs to the activity.
      */
     public function test_get_by_cmid_selects_activity_meeting(): void {

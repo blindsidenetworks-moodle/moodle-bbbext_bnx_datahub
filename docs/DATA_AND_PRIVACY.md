@@ -21,11 +21,28 @@ information in operational exports and database access.
 
 ## Access control
 
-Report access requires `bbbext/bnx_datahub:viewreports` in course context.
+Built-in activity report access requires `bbbext/bnx_datahub:viewreports` in the
+activity context; built-in site-wide reports require it at system context.
 The navigation addon hides links from unauthorized users, but report endpoints
 must remain capability-protected. Do not expose meeting or attendee rows through
 an unauthenticated endpoint or grant this capability to learner roles by
 default.
+
+DataHub also supplies custom Report Builder datasources. When custom reports are
+enabled, users with `moodle/reportbuilder:edit` or `moodle/reportbuilder:editall`
+can create reports, subject to Moodle's report limit. DataHub's datasources have
+no default course, group, or session exclusion conditions, so reports can contain
+site-wide data independently of `bbbext/bnx_datahub:viewreports`. A report's
+audience and Moodle Report Builder capabilities govern who can view it; audience
+members can view it without the DataHub reporting capability. Report editors and
+users with `moodle/reportbuilder:viewall` can also view reports as permitted by
+Moodle. Adding a manual audience requires `moodle/user:viewalldetails` at system
+context.
+
+Limit Report Builder permissions to trusted roles and review custom report
+conditions, audiences, sharing, scheduled delivery, and downloads before exposing
+personal data. Session exclusion does not automatically exclude data from custom
+reports; use the **Excluded from default reports** filter when appropriate.
 
 Changing session exclusion requires `bbbext/bnx_datahub:manageexclusions` at
 the activity context. Changes are logged as Moodle events. Exclusion only changes

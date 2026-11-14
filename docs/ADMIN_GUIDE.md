@@ -44,6 +44,11 @@ even without `moodle/site:accessallgroups`. Limit report access to trusted roles
 The built-in attendance and engagement pages accessed without an activity ID
 show site-wide data and require the report capability at system context.
 
+Custom Report Builder reports use separate Moodle permissions and audiences.
+DataHub datasources can include site-wide data, including excluded sessions,
+without the DataHub report capability. Restrict report editing and review
+conditions and audiences; see [Data, Privacy, and Security](DATA_AND_PRIVACY.md).
+
 The reports use Moodle Report Builder. They display session attendance and
 engagement collected from BigBlueButton meeting-event callbacks. Use Moodle's
 normal report filters and downloads; DataHub does not expose a separate
