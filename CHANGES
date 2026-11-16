@@ -1,3 +1,11 @@
+1.2-beta.2 (November 16, 2026)
+- fix: Clean up analytics on activity deletion and prevent orphan records and cross-activity callback writes.
+- fix: Respect backup privacy settings and restrict built-in and custom reports by activity permissions and group visibility.
+- fix: Parse meeting durations correctly and provide an opt-in repair for supported historical discrepancies.
+- fix: Validate callback attendees, reduce sensitive debug output, and bound legacy migration status checks.
+- chore: Update PHPUnit coverage metadata and synchronize XMLDB version metadata with the plugin version.
+- docs: Document upgrade requirements, callback replay behavior, and custom report access restrictions.
+
 1.2-beta.1 (November 5, 2026)
 - feat: Add an activity dashboard with attendance and engagement summaries, charts, and a selectable session-level learner overview.
 - feat: Add a **Dashboard +** activity navigation entry while preserving other subplugin navigation contributions; refresh selected-session details asynchronously.

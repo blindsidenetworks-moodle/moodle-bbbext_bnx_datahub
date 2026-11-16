@@ -1,3 +1,11 @@
+1.2-beta.2 (November 16, 2026)
+- Improve analytics cleanup and backup privacy, and restrict reports to authorized activities and groups.
+- Reject callbacks for unrelated meetings and handle malformed attendees defensively.
+- Fix meeting duration parsing and add a preview-first, opt-in repair for supported historical discrepancies.
+- Improve migration status checks and reduce sensitive information in debug logs.
+- Scheduled custom DataHub reports are blocked; administrators should disable existing schedules.
+- Synchronize XMLDB and plugin version metadata. Moodle 5.3 and BNX 1.3 remain required.
+
 1.2-beta.1 (November 5, 2026)
 - Add the **Dashboard +** activity page with cross-session attendance and engagement summaries, charts, and selectable session details.
 - Show learner participation details for the selected session; session content refreshes without reloading the full page.

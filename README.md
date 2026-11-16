@@ -29,7 +29,7 @@ This plugin extends the BigBlueButton activity module by capturing real-time mee
 
 ## Requirements
 
-- Moodle 5.3 (the current `1.2-beta.1` beta release)
+- Moodle 5.3 (the current `1.2-beta.2` beta release)
 - BigBlueButton plugin (`mod_bigbluebuttonbn`)
 - BN Experience plugin (`bbbext_bnx` 1.3 or later; minimum version code `2026110500`) - must be enabled
 - BigBlueButton server with analytics callback enabled (`meetingevents_enabled`)
