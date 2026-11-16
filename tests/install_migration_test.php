@@ -376,10 +376,105 @@ final class install_migration_test extends \advanced_testcase {
         \core_plugin_manager::reset_caches();
 
         $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $check = new \bbbext_bnx_datahub\check\bnreports_migration_pending();
+        $this->assertSame(\core\check\result::WARNING, $check->get_result()->get_status());
 
         bbbext_bnx_datahub_migrate_bnreports_data();
 
         $this->assertFalse(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $this->assertSame(\core\check\result::OK, $check->get_result()->get_status());
+
+        $legacymeetingtable = bbbext_bnx_datahub_legacy_bnreports_table('_meeting');
+        $legacyusertable = bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user');
+        $DB->set_field($legacymeetingtable, 'internalmeetingid', ' ', ['id' => $legacymeetingid]);
+        $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $DB->set_field($legacymeetingtable, 'internalmeetingid', 'missing', ['id' => $legacymeetingid]);
+        $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $DB->set_field($legacymeetingtable, 'internalmeetingid', "\tint-pending-1\t", ['id' => $legacymeetingid]);
+        $this->assertFalse(bbbext_bnx_datahub_has_pending_bnreports_migration());
+
+        $legacyguest = $DB->get_record($legacyusertable, ['meetingid' => $legacymeetingid], '*', MUST_EXIST);
+        unset($legacyguest->id);
+        $legacyguest->userid = null;
+        $legacyguest->fullname = 'Guest Name';
+        $DB->insert_record($legacyusertable, $legacyguest);
+        $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+
+        $targetmeeting = $DB->get_record('bbbext_bnx_datahub_meeting', ['internalmeetingid' => 'int-pending-1']);
+        $targetguest = $DB->get_record('bbbext_bnx_datahub_meeting_user', ['meetingid' => $targetmeeting->id]);
+        unset($targetguest->id);
+        $targetguest->userid = null;
+        $targetguest->fullname = 'guest name';
+        $guestid = $DB->insert_record('bbbext_bnx_datahub_meeting_user', $targetguest);
+        $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+
+        $DB->set_field('bbbext_bnx_datahub_meeting_user', 'fullname', 'Guest Name ', ['id' => $guestid]);
+        $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $DB->set_field('bbbext_bnx_datahub_meeting_user', 'fullname', 'Guest Name', ['id' => $guestid]);
+        $this->assertFalse(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $DB->set_field('bbbext_bnx_datahub_meeting_user', 'timejoin', 1, ['id' => $guestid]);
+        $this->assertTrue(bbbext_bnx_datahub_has_pending_bnreports_migration());
+    }
+
+    /**
+     * The pending check handles multiple batches of migrated legacy data.
+     */
+    public function test_pending_migration_large_dataset(): void {
+        global $DB;
+
+        $this->create_legacy_bnreports_tables();
+        $course = $this->getDataGenerator()->create_course();
+        $bbb = $this->getDataGenerator()->create_module('bigbluebuttonbn', ['course' => $course->id]);
+        $bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $bbb->id], '*', MUST_EXIST);
+        $legacymeetingtable = bbbext_bnx_datahub_legacy_bnreports_table('_meeting');
+        $legacyusertable = bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user');
+        $payload = str_repeat('x', 8192);
+        for ($index = 0; $index < 1000; $index++) {
+            $identifier = 'benchmark-' . $index;
+            $legacymeetingid = $DB->insert_record($legacymeetingtable, (object) [
+                'bigbluebuttonbnid' => $bbb->id,
+                'externalmeetingid' => $identifier,
+                'internalmeetingid' => $identifier,
+                'meetingname' => 'Benchmark meeting',
+                'metadata' => $payload,
+                'rawdata' => $payload,
+            ]);
+            $meetingid = $DB->insert_record('bbbext_bnx_datahub_meeting', (object) [
+                'bnxid' => $bnx->id,
+                'externalmeetingid' => $identifier,
+                'internalmeetingid' => $identifier,
+                'meetingname' => 'Benchmark meeting',
+            ]);
+            $DB->insert_record($legacyusertable, (object) [
+                'meetingid' => $legacymeetingid,
+                'fullname' => 'Guest',
+                'role' => 'viewer',
+                'rawdata' => $payload,
+            ]);
+            $DB->insert_record('bbbext_bnx_datahub_meeting_user', (object) [
+                'meetingid' => $meetingid,
+                'fullname' => 'Guest',
+                'attendeerole' => 'viewer',
+            ]);
+        }
+
+        $reads = $DB->perf_get_reads();
+        $this->assertFalse(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $this->assertLessThanOrEqual(30, $DB->perf_get_reads() - $reads);
+    }
+
+    /**
+     * Missing and empty legacy tables do not report pending migration.
+     */
+    public function test_pending_migration_missing_and_empty_tables(): void {
+        global $DB;
+
+        $this->create_legacy_bnreports_tables();
+        $this->assertFalse(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $legacyusertable = new \xmldb_table(bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user'));
+        $DB->get_manager()->drop_table($legacyusertable);
+        $this->assertFalse(bbbext_bnx_datahub_has_pending_bnreports_migration());
+        $this->create_legacy_bnreports_tables();
     }
 
     /**

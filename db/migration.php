@@ -101,96 +101,102 @@ function bbbext_bnx_datahub_has_pending_bnreports_migration(): bool {
         return false;
     }
 
-    $legacymeetings = $DB->get_records(bbbext_bnx_datahub_legacy_bnreports_table('_meeting'));
-    if (empty($legacymeetings)) {
-        return false;
-    }
+    $legacymeetings = bbbext_bnx_datahub_legacy_bnreports_table('_meeting');
+    $legacyusers = bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user');
+    $batchsize = 200;
+    $lastid = null;
+    $hasmeetings = false;
+    $targetname = "COALESCE(target.fullname, '')";
+    $legacyname = "COALESCE(legacy.fullname, '')";
+    $nameequals = $DB->sql_equal($targetname, $legacyname);
+    $targetnamelength = $DB->sql_length($DB->sql_concat($targetname, "'X'"));
+    $legacynamelength = $DB->sql_length($DB->sql_concat($legacyname, "'X'"));
 
-    $internalmeetingids = [];
-    foreach ($legacymeetings as $legacymeeting) {
-        $internal = trim((string) ($legacymeeting->internalmeetingid ?? ''));
-        if ($internal !== '') {
-            $internalmeetingids[$internal] = true;
+    while (true) {
+        $select = $lastid === null ? '' : 'id > :lastid';
+        $selectparams = $lastid === null ? [] : ['lastid' => $lastid];
+        $batch = $DB->get_records_select(
+            $legacymeetings,
+            $select,
+            $selectparams,
+            'id ASC',
+            'id, internalmeetingid',
+            0,
+            $batchsize
+        );
+        if (!$batch) {
+            break;
         }
-    }
+        $hasmeetings = true;
+        $internalmeetingids = [];
+        foreach ($batch as $meeting) {
+            $lastid = (int) $meeting->id;
+            $internalmeetingid = trim((string) ($meeting->internalmeetingid ?? ''));
+            if ($internalmeetingid === '') {
+                return true;
+            }
+            $internalmeetingids[$internalmeetingid] = $internalmeetingid;
+        }
 
-    $existingmeetings = empty($internalmeetingids)
-        ? []
-        : array_column(
-            $DB->get_records_list(
+        [$insql, $inparams] = $DB->get_in_or_equal(array_values($internalmeetingids), SQL_PARAMS_NAMED, 'internal');
+        $existingmeetings = [];
+        $offset = 0;
+        do {
+            $existingbatch = $DB->get_records_select(
                 'bbbext_bnx_datahub_meeting',
-                'internalmeetingid',
-                array_keys($internalmeetingids),
-                '',
-                'id, internalmeetingid'
-            ),
-            null,
-            'internalmeetingid'
-        );
+                "internalmeetingid {$insql}",
+                $inparams,
+                'id ASC',
+                'id, internalmeetingid',
+                $offset,
+                $batchsize
+            );
+            foreach ($existingbatch as $meeting) {
+                if (isset($internalmeetingids[$meeting->internalmeetingid])) {
+                    $existingmeetings[$meeting->internalmeetingid] = (int) $meeting->id;
+                }
+            }
+            $offset += count($existingbatch);
+        } while (count($existingbatch) === $batchsize);
 
-    if (count($existingmeetings) !== count($internalmeetingids)) {
-        return true;
-    }
-
-    $meetingidmap = [];
-    foreach ($legacymeetings as $legacymeeting) {
-        $internalmeetingid = trim((string) ($legacymeeting->internalmeetingid ?? ''));
-        if ($internalmeetingid === '' || !isset($existingmeetings[$internalmeetingid])) {
+        $mapping = [];
+        $params = [];
+        $idtype = $DB->get_dbfamily() === 'mysql' ? 'SIGNED' : 'BIGINT';
+        foreach ($batch as $meeting) {
+            $internalmeetingid = trim((string) $meeting->internalmeetingid);
+            if (!isset($existingmeetings[$internalmeetingid])) {
+                return true;
+            }
+            $index = count($mapping);
+            $mapping[] = "SELECT CAST(:legacy{$index} AS {$idtype}) AS legacyid, CAST(:target{$index} AS {$idtype}) AS targetid";
+            $params['legacy' . $index] = (int) $meeting->id;
+            $params['target' . $index] = $existingmeetings[$internalmeetingid];
+        }
+        $mappingsql = implode(' UNION ALL ', $mapping);
+        $sql = "SELECT legacy.id
+                  FROM {{$legacyusers}} legacy
+                  JOIN ({$mappingsql}) mapping ON mapping.legacyid = legacy.meetingid
+                 WHERE NOT EXISTS (
+                       SELECT 1
+                         FROM {bbbext_bnx_datahub_meeting_user} target
+                        WHERE target.meetingid = mapping.targetid
+                          AND ((legacy.userid > 0 AND target.userid = legacy.userid)
+                               OR (COALESCE(legacy.userid, 0) <= 0 AND COALESCE(target.userid, 0) <= 0
+                                   AND {$nameequals} AND {$targetnamelength} = {$legacynamelength}
+                                   AND COALESCE(target.timejoin, 0) = COALESCE(legacy.timejoin, 0))))";
+        if ($DB->record_exists_sql($sql, $params)) {
             return true;
         }
-        $meetingidmap[(int) $legacymeeting->id] = (int) $existingmeetings[$internalmeetingid]->id;
     }
 
-    $legacyusers = $DB->get_records(bbbext_bnx_datahub_legacy_bnreports_table('_meeting_user'));
-    if (empty($legacyusers)) {
+    if (!$hasmeetings) {
         return false;
     }
 
-    $targetmeetingids = array_values(array_unique(array_map('intval', $meetingidmap)));
-    $existingbymeeting = [];
-    if (!empty($targetmeetingids)) {
-        [$insql, $inparams] = $DB->get_in_or_equal($targetmeetingids, SQL_PARAMS_NAMED, 'mid');
-        $existingrows = $DB->get_records_select(
-            'bbbext_bnx_datahub_meeting_user',
-            "meetingid {$insql}",
-            $inparams,
-            '',
-            'id, meetingid, userid, fullname, timejoin'
-        );
-        foreach ($existingrows as $row) {
-            $mid = (int) $row->meetingid;
-            $existingbymeeting[$mid] ??= ['byuserid' => [], 'byfingerprint' => []];
-            if ((int) $row->userid > 0) {
-                $existingbymeeting[$mid]['byuserid'][(int) $row->userid] = (int) $row->id;
-            } else {
-                $fingerprint = $row->fullname . '|' . (int) $row->timejoin;
-                $existingbymeeting[$mid]['byfingerprint'][$fingerprint] = (int) $row->id;
-            }
-        }
-    }
-
-    foreach ($legacyusers as $legacyuser) {
-        $legacymeetingid = (int) ($legacyuser->meetingid ?? 0);
-        if (empty($meetingidmap[$legacymeetingid])) {
-            return true;
-        }
-
-        $meetingid = (int) $meetingidmap[$legacymeetingid];
-        $userid = isset($legacyuser->userid) ? (int) $legacyuser->userid : null;
-        $bucket = $existingbymeeting[$meetingid] ?? ['byuserid' => [], 'byfingerprint' => []];
-        if ($userid !== null && $userid > 0) {
-            if (!isset($bucket['byuserid'][$userid])) {
-                return true;
-            }
-        } else {
-            $fingerprint = (string) ($legacyuser->fullname ?? '') . '|' . (int) ($legacyuser->timejoin ?? 0);
-            if (!isset($bucket['byfingerprint'][$fingerprint])) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return $DB->record_exists_sql("SELECT legacy.id
+                                    FROM {{$legacyusers}} legacy
+                                   WHERE NOT EXISTS (
+                                         SELECT 1 FROM {{$legacymeetings}} meeting WHERE meeting.id = legacy.meetingid)");
 }
 
 /**
