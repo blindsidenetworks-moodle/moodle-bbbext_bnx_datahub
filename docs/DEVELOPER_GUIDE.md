@@ -56,6 +56,12 @@ logging reports skipped entries when enabled. Unexpected database errors still
 propagate, and earlier writes may already have succeeded. Duplicate semantics
 have not been confirmed against captured BigBlueButton callbacks.
 
+Maintain `db/install.xml` using Moodle's XMLDB editor and keep its table
+definitions consistent with the upgrade steps in `db/upgrade.php`. Moodle uses
+the plugin version in `version.php` to detect upgrades; the XMLDB editor updates
+the schema file's `VERSION` using a date when its structure changes. A mismatch
+between these values does not by itself trigger or prevent a plugin upgrade.
+
 ## Report Builder integration
 
 DataHub's entities define reusable columns and filters. Datasources combine
