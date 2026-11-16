@@ -113,12 +113,15 @@ As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict s
 
 ### Running PHPUnit Tests
 
+Run these commands from the Moodle root with a dedicated PHPUnit database and
+data directory configured. Initializing PHPUnit resets its configured test data.
+
 ```bash
 # Initialize PHPUnit (if not already done)
 php admin/tool/phpunit/cli/init.php
 
-# Run all tests
-vendor/bin/phpunit public/mod/bigbluebuttonbn/extension/bnx_datahub/tests/
+# Run all plugin tests
+vendor/bin/phpunit --test-suffix _test.php public/mod/bigbluebuttonbn/extension/bnx_datahub/tests/
 
 # Run individual test files
 vendor/bin/phpunit public/mod/bigbluebuttonbn/extension/bnx_datahub/tests/logger_test.php
@@ -128,211 +131,21 @@ vendor/bin/phpunit public/mod/bigbluebuttonbn/extension/bnx_datahub/tests/broker
 
 ### Test Coverage
 
-The plugin includes approximately 71 PHPUnit tests across 9 test files:
-
-#### logger_test.php (10 tests)
-Tests the core data logging functions for meetings and attendees.
-
-| Test | Purpose |
-|------|---------|
-| `test_log_meeting_creates_new_record` | **Core functionality** - New meeting records are created |
-| `test_log_meeting_updates_existing_record` | **Data integrity** - Existing records updated, not duplicated |
-| `test_log_meeting_returns_false_when_bnx_missing` | **Dependency** - Graceful failure without BNX |
-| `test_log_meeting_stores_json_metadata` | **Data format** - JSON metadata preserved |
-| `test_log_meeting_user_creates_new_record` | **Core functionality** - Attendee records created |
-| `test_log_meeting_user_updates_existing_record` | **Data integrity** - Attendee records updated |
-| `test_log_meeting_user_returns_false_when_meeting_missing` | **Error handling** - Graceful failure |
-| `test_log_meeting_user_handles_multiple_attendees` | **Scale** - Multiple attendees per meeting |
-| `test_log_meeting_user_stores_engagement_metrics` | **Engagement** - All metrics captured |
-| `test_log_meeting_user_links_to_moodle_user` | **User mapping** - Links to Moodle user records |
-
-#### privacy_provider_test.php (9 tests)
-Tests GDPR/Privacy API compliance for user data handling.
-
-| Test | Purpose |
-|------|---------|
-| `test_get_metadata_declares_tables` | **Legal compliance** - Data tables declared |
-| `test_get_contexts_for_userid` | **GDPR** - Contexts with user data identified |
-| `test_get_users_in_context` | **GDPR** - Users in context enumerated |
-| `test_export_user_data` | **GDPR** - User data exportable |
-| `test_delete_data_for_all_users_in_context` | **GDPR** - Bulk deletion works |
-| `test_delete_data_for_user` | **GDPR** - Individual user deletion works |
-| `test_delete_data_for_users` | **GDPR** - Multi-user deletion works |
-| `test_export_includes_engagement_metrics` | **Completeness** - All data exported |
-| `test_deletion_removes_all_user_records` | **Thoroughness** - No orphaned data |
-
-#### broker_meeting_events_addons_test.php (6 tests)
-Tests the webhook handler that processes BigBlueButton events.
-
-| Test | Purpose |
-|------|---------|
-| `test_class_implements_interface` | **Framework** - Proper addon integration |
-| `test_process_action_returns_early_without_bnx` | **Dependency** - Requires BNX enabled |
-| `test_process_action_logs_meeting_data` | **Core functionality** - Meeting events logged |
-| `test_process_action_logs_attendee_data` | **Core functionality** - Attendee events logged |
-| `test_process_action_handles_missing_data` | **Robustness** - Graceful error handling |
-| `test_process_action_handles_multiple_attendees` | **Scale** - Batch processing works |
-
-#### meeting_entity_test.php (5 tests)
-Tests the Reportbuilder meeting entity definition.
-
-| Test | Purpose |
-|------|---------|
-| `test_get_default_tables` | **Structure** - Correct database table |
-| `test_get_default_entity_title` | **UI** - Proper display title |
-| `test_initialise` | **Framework** - Entity initializes correctly |
-| `test_get_all_columns` | **Report structure** - All columns defined |
-| `test_get_all_filters` | **Report filtering** - Filters available |
-
-#### attendee_entity_test.php (9 tests)
-Tests the Reportbuilder attendee entity with engagement columns.
-
-| Test | Purpose |
-|------|---------|
-| `test_get_default_tables` | **Structure** - Correct database table |
-| `test_get_default_entity_title` | **UI** - Proper display title |
-| `test_initialise` | **Framework** - Entity initializes correctly |
-| `test_get_all_columns` | **Report structure** - Basic columns defined |
-| `test_get_engagement_columns` | **Engagement** - All engagement metrics as columns |
-| `test_get_all_filters` | **Report filtering** - Filters available |
-| `test_role_filter_exists` | **Filtering** - Can filter by role |
-| `test_time_columns_exist` | **Attendance** - Join/leave time columns |
-| `test_elapsed_time_column_exists` | **Duration** - Session duration column |
-
-#### room_entity_test.php (6 tests)
-Tests the Reportbuilder room (BigBlueButton activity) entity.
-
-| Test | Purpose |
-|------|---------|
-| `test_get_default_tables` | **Structure** - Links to bigbluebuttonbn table |
-| `test_get_default_entity_title` | **UI** - Proper display title |
-| `test_initialise` | **Framework** - Entity initializes correctly |
-| `test_get_all_columns` | **Report structure** - Room columns defined |
-| `test_get_all_filters` | **Report filtering** - Filters available |
-| `test_name_filter_exists` | **Filtering** - Can filter by room name |
-
-#### attendance_report_test.php (7 tests)
-Tests the attendance system report configuration.
-
-| Test | Purpose |
-|------|---------|
-| `test_report_instantiation` | **Framework** - Report creates successfully |
-| `test_report_columns` | **Structure** - Expected columns present |
-| `test_report_filters` | **Filtering** - Expected filters present |
-| `test_report_downloadable` | **Export** - Report can be downloaded |
-| `test_report_empty_data` | **Edge case** - Works with no data |
-| `test_can_view` | **Access** - View permission check |
-| `test_report_with_bigbluebuttonbnid_parameter` | **Context** - Filters to specific activity |
-
-#### engagement_report_test.php (8 tests)
-Tests the engagement system report configuration.
-
-| Test | Purpose |
-|------|---------|
-| `test_report_instantiation` | **Framework** - Report creates successfully |
-| `test_report_columns` | **Structure** - Expected columns present |
-| `test_report_filters` | **Filtering** - Expected filters present |
-| `test_report_downloadable` | **Export** - Report can be downloaded |
-| `test_report_empty_data` | **Edge case** - Works with no data |
-| `test_can_view` | **Access** - View permission check |
-| `test_report_with_bigbluebuttonbnid_parameter` | **Context** - Filters to specific activity |
-| `test_engagement_metrics_columns` | **Engagement** - All metrics columns present |
-
-#### navigation_append_addon_test.php (11 tests)
-Tests the navigation addon that adds the dashboard link.
-
-| Test | Purpose |
-|------|---------|
-| `test_class_instantiation` | **Framework** - Class creates successfully |
-| `test_implements_interface` | **Framework** - Proper addon interface |
-| `test_append_settings_navigation_method_exists` | **API** - Required method present |
-| `test_requires_bnx_plugin` | **Dependency** - Checks BNX enabled |
-| `test_checks_meetingevents_config` | **Config** - Requires meetingevents enabled |
-| `test_checks_viewreports_capability` | **Security** - Capability check present |
-| `test_dashboard_url_format` | **Navigation** - Dashboard URL generated |
-| `test_adds_navigation_nodes` | **UI** - Dashboard added to navigation |
-| `test_excludes_recordings_only_instances` | **Context** - No reports for recordings-only |
-| `test_does_not_append_completion_validate` | **Navigation** - Avoids duplicating the parent link |
-| `test_forces_existing_nodes_into_more_menu` | **Navigation** - Keeps the dashboard as the first activity tab |
+PHPUnit tests cover callback ingestion and storage, dashboard services and
+rendering, reports and access checks, navigation, prerequisites, migration,
+backup and restore, and the Privacy API. The test files in `tests/` are the
+authoritative inventory; use `--list-tests` with the command above to inspect it.
 
 ### Behat Features
 
-The plugin includes Behat scenarios across 6 feature files for end-to-end browser testing:
-
-#### bnx_dependency.feature (3 scenarios)
-Tests the BNX parent plugin dependency behavior.
-
-| Scenario | Purpose |
-|----------|---------|
-| `Data Hub plugin is listed when BNX is enabled` | **Admin UI** - Plugin visible in management |
-| `Data Hub reports are accessible when BNX is enabled` | **Integration** - Reports work with BNX |
-| `Standard BigBlueButton activity works without BNX` | **Compatibility** - Core BBB unaffected |
-
-#### navigation.feature (4 scenarios)
-Tests dashboard visibility and navigation in BigBlueButton activities.
-
-| Scenario | Purpose |
-|----------|---------|
-| `Teacher can see dashboard in activity navigation when meeting events enabled` | **UI** - Dashboard appears for teachers |
-| `Teacher can navigate to dashboard from activity` | **Navigation** - Dashboard link works |
-| `Dashboard is not visible when meeting events disabled` | **Config** - Dashboard hidden when disabled |
-| `Student cannot see the dashboard in activity navigation` | **Security** - Students don't see the dashboard |
-
-#### attendance_report.feature (5 scenarios)
-Tests the attendance report functionality.
-
-| Scenario | Purpose |
-|----------|---------|
-| `Teacher can view attendance report with meeting data` | **Core functionality** - Report displays data |
-| `Teacher can view attendance report with no meeting data` | **Edge case** - Empty report works |
-| `Attendance report shows correct user roles` | **Data accuracy** - Moderator/Viewer shown |
-| `Attendance report shows multiple meetings` | **Multi-session** - All meetings displayed |
-| `Students that did not attend are not shown` | **Data accuracy** - Only attendees listed |
-
-#### engagement_report.feature (8 scenarios)
-Tests the engagement report and metrics display.
-
-| Scenario | Purpose |
-|----------|---------|
-| `Teacher can view engagement report with engagement data` | **Core functionality** - Report displays data |
-| `Teacher can view engagement report with no data` | **Edge case** - Empty report works |
-| `Engagement report shows chat activity` | **Metric** - Chat count displayed |
-| `Engagement report shows talk time metrics` | **Metric** - Talk time displayed |
-| `Engagement report shows poll participation` | **Metric** - Poll votes displayed |
-| `Engagement report shows raised hand activity` | **Metric** - Hand raises displayed |
-| `Engagement report shows emoji reactions` | **Metric** - Emoji count displayed |
-| `Engagement report shows engagement scores` | **Metric** - Calculated scores displayed |
-
-#### permissions.feature (11 scenarios)
-Tests capability-based access control.
-
-| Scenario | Purpose |
-|----------|---------|
-| `Editing teacher can view attendance report` | **Access** - Teachers authorized |
-| `Editing teacher can view engagement report` | **Access** - Teachers authorized |
-| `Manager can view attendance report` | **Access** - Managers authorized |
-| `Manager can view engagement report` | **Access** - Managers authorized |
-| `Student does not see attendance report link` | **Security** - Students denied |
-| `Student does not see engagement report link` | **Security** - Students denied |
-| `Admin can view attendance report` | **Access** - Admins authorized |
-| `Admin can view engagement report` | **Access** - Admins authorized |
-| `Non-editing teacher without capability does not see report links` | **Security** - Capability enforced |
-| `Guest user cannot access attendance report` | **Security** - Login required |
-| `Guest user cannot access engagement report` | **Security** - Login required |
-
-#### data_storage.feature (6 scenarios)
-Tests data persistence and integrity.
-
-| Scenario | Purpose |
-|----------|---------|
-| `Meeting data is stored correctly` | **Data integrity** - Meetings saved |
-| `Attendee data is stored correctly` | **Data integrity** - Attendees saved |
-| `Multiple attendees can be stored for a single meeting` | **Scale** - Multi-attendee support |
-| `Multiple meetings can be stored for an activity` | **Scale** - Multi-session support |
-| `Engagement metrics are stored correctly` | **Data integrity** - All metrics saved |
-| `Activity without meetings shows empty report` | **Edge case** - No data handled |
+The feature files in `tests/behat/` cover prerequisites, navigation, reports,
+permissions, stored data, and dashboard session selection without JavaScript.
+They are the authoritative inventory of browser scenarios.
 
 #### Running Behat Tests
+
+Configure a dedicated Behat database and data directory before initialization;
+initialization resets the configured Behat test data.
 
 ```bash
 # Initialize Behat (if not already done)
@@ -349,24 +162,7 @@ vendor/bin/behat --config /path/to/behatdata/behatrun/behat/behat.yml \
 vendor/bin/behat --config /path/to/behatdata/behatrun/behat/behat.yml --tags @bbbext_bnx_datahub -v
 ```
 
-#### Behat Step Definitions
-
-The plugin includes custom step definitions in `tests/behat/behat_bbbext_bnx_datahub.php`:
-
-| Step | Description |
-|------|-------------|
-| `the following meeting data exists for BigBlueButton activity "..."` | Creates meeting records for testing |
-| `the following attendee data exists for meeting "..."` | Creates attendee records with engagement data |
-| `I navigate to the attendance report for "..."` | Navigates to the attendance report page |
-| `I navigate to the engagement report for "..."` | Navigates to the engagement report page |
-| `I should see the attendance report` | Verifies attendance report page is displayed |
-| `I should see the engagement report` | Verifies engagement report page is displayed |
-| `I should see attendee "..." in the report` | Verifies attendee appears in report |
-| `I should not see attendee "..." in the report` | Verifies attendee does not appear |
-| `meeting data should exist for BigBlueButton activity "..."` | Verifies meeting data in database |
-| `attendee data should exist for meeting "..."` | Verifies attendee data in database |
-| `no meeting data should exist for BigBlueButton activity "..."` | Verifies no meeting data exists |
-| `a BNX record exists for BigBlueButton activity "..."` | Creates prerequisite BNX record |
+Custom steps are defined in `tests/behat/behat_bbbext_bnx_datahub.php`.
 
 ## How It Works
 
