@@ -25,8 +25,8 @@ use stdClass;
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers    \bbbext_bnx_datahub\local\services\dashboard_service
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(\bbbext_bnx_datahub\local\services\dashboard_service::class)]
 final class dashboard_service_test extends advanced_testcase {
     /** @var stdClass The bbbext_bnx record. */
     private stdClass $bnx;

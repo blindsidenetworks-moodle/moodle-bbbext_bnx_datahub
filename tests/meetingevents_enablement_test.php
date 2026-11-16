@@ -79,9 +79,8 @@ final class meetingevents_enablement_test extends \advanced_testcase {
     /**
      * The legacy cross-plugin auto-enable hook must remain removed while the
      * local DataHub enablement guard may observe its own config event.
-     *
-     * @coversNothing
      */
+    #[\PHPUnit\Framework\Attributes\CoversNothing]
     public function test_legacy_cross_plugin_auto_enable_hook_is_removed(): void {
         $this->assertFileDoesNotExist(
             __DIR__ . '/../classes/plugininfo_callbacks.php',

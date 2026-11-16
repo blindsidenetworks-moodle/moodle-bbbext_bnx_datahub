@@ -24,8 +24,8 @@ use advanced_testcase;
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers    \bbbext_bnx_datahub\local\services\orphan_cleanup_service
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(\bbbext_bnx_datahub\local\services\orphan_cleanup_service::class)]
 final class orphan_cleanup_service_test extends advanced_testcase {
     /**
      * Test preview, explicit cleanup, and preservation of linked attendees.

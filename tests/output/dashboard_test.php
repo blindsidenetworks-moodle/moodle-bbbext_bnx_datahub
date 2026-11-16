@@ -24,8 +24,8 @@ use advanced_testcase;
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers    \bbbext_bnx_datahub\output\dashboard
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(\bbbext_bnx_datahub\output\dashboard::class)]
 final class dashboard_test extends advanced_testcase {
     /**
      * Empty dashboard data renders its empty-state context and detail links.

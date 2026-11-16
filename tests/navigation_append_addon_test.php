@@ -30,8 +30,8 @@ use settings_navigation;
  * @package   bbbext_bnx_datahub
  * @copyright 2025 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers    \bbbext_bnx_datahub\bigbluebuttonbn\navigation_append_addon
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(\bbbext_bnx_datahub\bigbluebuttonbn\navigation_append_addon::class)]
 final class navigation_append_addon_test extends advanced_testcase {
     /**
      * Set up for each test.

@@ -19,21 +19,21 @@ namespace bbbext_bnx_datahub;
 /**
  * Tests for install-time migration from BN Reports.
  *
- * @covers ::bbbext_bnx_datahub_migrate_bnreports_data
- * @covers ::bbbext_bnx_datahub_migrate_bnreports_settings
- * @covers ::bbbext_bnx_datahub_migratable_setting_keys
- * @covers ::bbbext_bnx_datahub_has_bnreports_conflict
- * @covers ::bbbext_bnx_datahub_has_pending_bnreports_migration
- * @covers ::bbbext_bnx_datahub_is_bnx_enabled
- * @covers ::bbbext_bnx_datahub_disable_if_bnx_unavailable
- * @covers ::bbbext_bnx_datahub_disable_if_bnreports_present
- * @covers ::bbbext_bnx_datahub_ensure_bnx_record
- * @covers ::bbbext_bnx_datahub_legacy_bnreports_table
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_migrate_bnreports_data')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_migrate_bnreports_settings')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_migratable_setting_keys')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_has_bnreports_conflict')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_has_pending_bnreports_migration')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_is_bnx_enabled')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_disable_if_bnx_unavailable')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_disable_if_bnreports_present')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_ensure_bnx_record')]
+#[\PHPUnit\Framework\Attributes\CoversFunction('bbbext_bnx_datahub_legacy_bnreports_table')]
 final class install_migration_test extends \advanced_testcase {
     /**
      * Set up for each test.
