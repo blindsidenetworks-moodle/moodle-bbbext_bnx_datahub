@@ -22,6 +22,7 @@ use lang_string;
 use core_reportbuilder\system_report;
 use core_reportbuilder\local\entities\course;
 use core_reportbuilder\local\entities\user as user_entity;
+use bbbext_bnx_datahub\local\services\meeting_service;
 use bbbext_bnx_datahub\reportbuilder\local\entities\attendee;
 use bbbext_bnx_datahub\reportbuilder\local\entities\meeting;
 use bbbext_bnx_datahub\reportbuilder\local\entities\room;
@@ -94,6 +95,13 @@ class engagement extends system_report {
         $roomalias = $roomentity->get_table_alias('bigbluebuttonbn');
         $this->add_entity($roomentity);
         $this->add_join("LEFT JOIN {bigbluebuttonbn} {$roomalias} ON {$roomalias}.id = {$bnxalias}.bigbluebuttonbnid");
+        $context = $this->get_context();
+        [$visibilitysql, $visibilityparams] = meeting_service::get_report_visibility_sql(
+            $meetingalias,
+            $roomalias,
+            $context->contextlevel === CONTEXT_MODULE ? (int) $context->instanceid : null
+        );
+        $this->add_base_condition_sql($visibilitysql, $visibilityparams);
 
         $courseentity = new course();
         $coursealias = $courseentity->get_table_alias('course');

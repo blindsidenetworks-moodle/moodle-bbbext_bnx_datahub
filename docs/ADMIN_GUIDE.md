@@ -53,12 +53,22 @@ Moodle refreshes capability metadata during a plugin upgrade. Deployments that
 replace files without a plugin version change do not automatically receive the
 updated risk flag; a cache purge alone does not update the stored metadata.
 
-The dashboard and built-in activity reports show all attendees for the activity,
-regardless of group mode or the viewer's group membership. In separate-groups
-courses, a viewer with report access can therefore see learners in other groups
-even without `moodle/site:accessallgroups`. Limit report access to trusted roles.
+The dashboard and built-in reports use the activity's group mode. In separate
+groups, viewers without `moodle/site:accessallgroups` see sessions for their
+current groups. In visible groups they can see sessions for other groups in the
+activity's grouping. Once a session is visible, all its attendees are included,
+including guests and moderators. Current group membership also controls access
+to older sessions; it is not a historical membership snapshot.
+
+In group-enabled activities, sessions without an identifiable current group are
+visible only to viewers with all-groups access. This includes sessions whose
+group was deleted or whose meeting identifier cannot be matched. Activities
+without groups do not apply this restriction. The excluded-session list and
+exclusion actions follow the same session visibility rules.
+
 The built-in attendance and engagement pages accessed without an activity ID
-show site-wide data and require the report capability at system context.
+require the report capability at system context and apply group restrictions
+individually for each activity, including in downloads.
 
 Custom Report Builder reports use separate Moodle permissions and audiences.
 DataHub datasources can include site-wide data, including excluded sessions,

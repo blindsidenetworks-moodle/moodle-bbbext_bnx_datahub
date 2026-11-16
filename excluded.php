@@ -75,7 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('dashboard:excludedtitle', 'bbbext_bnx_datahub'));
 echo html_writer::link($dashboardurl, get_string('dashboard:back', 'bbbext_bnx_datahub'));
-$meetings = array_filter(meeting_service::get_all_by_cmid($cmid), static fn(stdClass $meeting): bool => (bool) $meeting->excluded);
+$meetings = array_filter(
+    meeting_service::get_report_meetings_by_cmid($cmid),
+    static fn(stdClass $meeting): bool => (bool) $meeting->excluded
+);
 if (!$meetings) {
     echo $OUTPUT->notification(get_string('dashboard:noexcluded', 'bbbext_bnx_datahub'), 'info');
 } else {

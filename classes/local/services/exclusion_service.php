@@ -34,7 +34,7 @@ class exclusion_service {
     public static function get_meeting(int $cmid, int $meetingid): \stdClass {
         $context = \context_module::instance($cmid);
         require_capability('bbbext/bnx_datahub:manageexclusions', $context);
-        foreach (meeting_service::get_all_by_cmid($cmid) as $meeting) {
+        foreach (meeting_service::get_report_meetings_by_cmid($cmid) as $meeting) {
             if ((int) $meeting->id === $meetingid) {
                 return $meeting;
             }

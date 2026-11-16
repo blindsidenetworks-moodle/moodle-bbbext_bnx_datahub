@@ -37,7 +37,7 @@ class dashboard_service {
     public static function get_by_cmid(int $cmid, int $selectedmeetingid = 0): \stdClass {
         global $DB;
 
-        $allmeetings = meeting_service::get_all_by_cmid($cmid);
+        $allmeetings = meeting_service::get_report_meetings_by_cmid($cmid);
         $meetings = array_values(array_filter($allmeetings, static fn(\stdClass $meeting): bool => !(bool) $meeting->excluded));
         $excludedcount = count($allmeetings) - count($meetings);
         if (empty($meetings)) {

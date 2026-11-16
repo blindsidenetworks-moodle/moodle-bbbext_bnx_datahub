@@ -82,6 +82,104 @@ class meeting_service {
     }
 
     /**
+     * Return meetings visible to the current report viewer for a course module.
+     *
+     * @param int $cmid Course module ID.
+     * @return array Visible meeting records, ordered by start time descending.
+     */
+    public static function get_report_meetings_by_cmid(int $cmid): array {
+        global $DB;
+
+        [$condition, $params] = self::get_report_visibility_sql('m', 'bbb', $cmid);
+        $params['cmid'] = $cmid;
+        $sql = 'SELECT ' . self::MEETING_COLUMNS . self::JOIN_SQL .
+            "WHERE cm.id = :cmid AND ($condition) ORDER BY m.timestart DESC";
+
+        return array_values($DB->get_records_sql($sql, $params));
+    }
+
+    /**
+     * Build the group visibility condition for built-in reports.
+     *
+     * @param string $meetingalias Meeting table alias.
+     * @param string $roomalias BigBlueButton activity table alias.
+     * @param int|null $cmid Restrict activity discovery to this course module, if supplied.
+     * @return array SQL condition and parameters.
+     */
+    public static function get_report_visibility_sql(string $meetingalias, string $roomalias, ?int $cmid = null): array {
+        global $DB, $USER;
+
+        $params = [];
+        $where = '';
+        if ($cmid !== null) {
+            $where = ' AND cm.id = :datahub_visibility_cmid';
+            $params['datahub_visibility_cmid'] = $cmid;
+        }
+        $modules = $DB->get_records_sql(
+            "SELECT DISTINCT cm.id, cm.course
+               FROM {course_modules} cm
+               JOIN {modules} mdl ON mdl.id = cm.module AND mdl.name = 'bigbluebuttonbn'
+               JOIN {bbbext_bnx} bnx ON bnx.bigbluebuttonbnid = cm.instance
+              WHERE cm.deletioninprogress = 0
+                AND EXISTS (SELECT 1 FROM {bbbext_bnx_datahub_meeting} meeting WHERE meeting.bnxid = bnx.id)
+                $where",
+            $params
+        );
+        $unrestricted = [];
+        $visible = [];
+        $separate = [];
+        foreach ($modules as $module) {
+            $activity = get_fast_modinfo((int) $module->course)->get_cm((int) $module->id);
+            $groupmode = (int) groups_get_activity_groupmode($activity);
+            if ($groupmode === NOGROUPS || has_capability('moodle/site:accessallgroups', \context_module::instance($module->id))) {
+                $unrestricted[] = (int) $module->id;
+            } else if ($groupmode === VISIBLEGROUPS) {
+                $visible[] = (int) $module->id;
+            } else {
+                $separate[] = (int) $module->id;
+            }
+        }
+
+        $unrestrictedsql = empty($unrestricted) ? '1 = 0' : 'dh_cm.id IN (' . implode(',', $unrestricted) . ')';
+        $visiblesql = empty($visible) ? '1 = 0' : 'dh_cm.id IN (' . implode(',', $visible) . ')';
+        $separatesql = empty($separate) ? '1 = 0' : 'dh_cm.id IN (' . implode(',', $separate) . ')';
+        $expectedid = $DB->sql_concat(
+            "$roomalias.meetingid",
+            "'-'",
+            "$roomalias.course",
+            "'-'",
+            "$roomalias.id",
+            "'['",
+            'dh_group.id',
+            "']X'"
+        );
+        $actualid = $DB->sql_concat("$meetingalias.externalmeetingid", "'X'");
+        $equalid = $DB->sql_equal($actualid, $expectedid);
+        $samelen = $DB->sql_length($actualid) . ' = ' . $DB->sql_length($expectedid);
+        $useridparam = \core_reportbuilder\local\helpers\database::generate_param_name();
+        $condition = "EXISTS (
+            SELECT 1
+              FROM {course_modules} dh_cm
+              JOIN {modules} dh_module ON dh_module.id = dh_cm.module AND dh_module.name = 'bigbluebuttonbn'
+         LEFT JOIN {groups} dh_group ON dh_group.courseid = $roomalias.course AND $equalid AND $samelen
+             WHERE dh_cm.instance = $roomalias.id
+               AND ($unrestrictedsql OR (
+                      dh_group.id IS NOT NULL
+                      AND (dh_cm.groupingid = 0 OR EXISTS (
+                          SELECT 1 FROM {groupings_groups} dh_grouping
+                           WHERE dh_grouping.groupingid = dh_cm.groupingid AND dh_grouping.groupid = dh_group.id
+                      ))
+                      AND ($visiblesql OR ($separatesql AND EXISTS (
+                          SELECT 1 FROM {groups_members} dh_member
+                           WHERE dh_member.groupid = dh_group.id AND dh_member.userid = :$useridparam
+                      )))
+               ))
+        )";
+
+        return [$condition, [$useridparam => (int) $USER->id]];
+    }
+
+    /**
      * Return a meeting by its internal meeting ID.
      *
      * @param string $internalmeetingid The BBB internal meeting ID.

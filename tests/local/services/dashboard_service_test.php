@@ -169,20 +169,20 @@ final class dashboard_service_test extends advanced_testcase {
     }
 
     /**
-     * Current activity reports expose all groups to viewers with the reporting capability.
+     * Activity reports respect group access while retaining complete session attendance.
      */
-    public function test_activity_reports_currently_include_all_groups(): void {
+    public function test_activity_reports_respect_group_access(): void {
         global $DB, $PAGE;
 
         $generator = $this->getDataGenerator();
         $cm = get_coursemodule_from_id('bigbluebuttonbn', $this->cmid, 0, false, MUST_EXIST);
         $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
-        $coursecontext = \context_course::instance($course->id);
         $modulecontext = \context_module::instance($this->cmid);
         $groupone = $generator->create_group(['courseid' => $course->id]);
         $grouptwo = $generator->create_group(['courseid' => $course->id]);
         $firstlearner = $generator->create_user(['firstname' => 'Firstgroup', 'lastname' => 'Learner']);
         $secondlearner = $generator->create_user(['firstname' => 'Secondgroup', 'lastname' => 'Learner']);
+        $otherlearner = $generator->create_user(['firstname' => 'Othergroup', 'lastname' => 'Learner']);
         $restrictedviewer = $generator->create_user();
         $allgroupsviewer = $generator->create_user();
         foreach ([$firstlearner, $secondlearner, $restrictedviewer] as $user) {
@@ -193,11 +193,30 @@ final class dashboard_service_test extends advanced_testcase {
         $generator->create_group_member(['groupid' => $groupone->id, 'userid' => $restrictedviewer->id]);
         $generator->create_group_member(['groupid' => $grouptwo->id, 'userid' => $secondlearner->id]);
         $roleid = create_role('Group report viewer', 'groupreportviewer', 'Group report viewer');
-        assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $roleid, $coursecontext->id);
-        role_assign($roleid, $restrictedviewer->id, $coursecontext->id);
-        $meeting = $this->insert_meeting(1000);
-        $this->insert_attendee($meeting->id, $firstlearner->id);
-        $this->insert_attendee($meeting->id, $secondlearner->id);
+        $systemcontext = \context_system::instance();
+        assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $roleid, $systemcontext->id);
+        role_assign($roleid, $restrictedviewer->id, $systemcontext->id);
+        role_assign($roleid, $allgroupsviewer->id, $systemcontext->id);
+        $instance = \mod_bigbluebuttonbn\instance::get_from_cmid($this->cmid);
+        $firstmeeting = $this->insert_meeting(1000);
+        $secondmeeting = $this->insert_meeting(2000);
+        $unknownmeeting = $this->insert_meeting(3000);
+        foreach ([$firstmeeting->id => $groupone->id, $secondmeeting->id => $grouptwo->id] as $meetingid => $groupid) {
+            $DB->set_field(
+                'bbbext_bnx_datahub_meeting',
+                'externalmeetingid',
+                $instance->get_meeting_id($groupid),
+                ['id' => $meetingid]
+            );
+        }
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'First group session', ['id' => $firstmeeting->id]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Second group session', ['id' => $secondmeeting->id]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Unknown group session', ['id' => $unknownmeeting->id]);
+        $this->insert_attendee($firstmeeting->id, $firstlearner->id);
+        $this->insert_attendee($firstmeeting->id, $secondlearner->id);
+        $this->insert_attendee($firstmeeting->id, 0);
+        $this->insert_attendee($secondmeeting->id, $otherlearner->id);
+        $this->insert_attendee($unknownmeeting->id, $otherlearner->id);
         $PAGE->set_url(new \moodle_url('/'));
 
         foreach ([SEPARATEGROUPS, VISIBLEGROUPS] as $groupmode) {
@@ -207,23 +226,251 @@ final class dashboard_service_test extends advanced_testcase {
             $this->assertSame($groupmode, (int) groups_get_activity_groupmode($currentcm));
             foreach ([[$restrictedviewer, false], [$allgroupsviewer, true]] as [$viewer, $accessallgroups]) {
                 $this->setUser($viewer);
+                \core_reportbuilder\manager::reset_caches();
                 $this->assertTrue(has_capability('bbbext/bnx_datahub:viewreports', $modulecontext));
                 $this->assertSame($accessallgroups, has_capability('moodle/site:accessallgroups', $modulecontext));
                 $data = dashboard_service::get_by_cmid($this->cmid);
-                $this->assertSame(2, $data->uniquelearnercount);
-                $this->assertCount(2, $data->selectedlearners);
-                foreach (
-                    [
-                        \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
-                        \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
-                    ] as $reportclass
-                ) {
-                    $report = \core_reportbuilder\system_report_factory::create($reportclass, $modulecontext);
-                    $content = $report->output();
-                    $this->assertStringContainsString('Firstgroup', $content);
-                    $this->assertStringContainsString('Secondgroup', $content);
+                $expectedcount = $accessallgroups ? 3 : ($groupmode === VISIBLEGROUPS ? 2 : 1);
+                $this->assertSame($expectedcount, $data->meetingcount);
+                $this->assertSame($expectedcount === 1 ? 2 : 3, $data->uniquelearnercount);
+                $selected = dashboard_service::get_by_cmid($this->cmid, $firstmeeting->id);
+                $this->assertCount(3, $selected->selectedlearners);
+                if ($expectedcount === 1) {
+                    $forgedselection = dashboard_service::get_by_cmid($this->cmid, $secondmeeting->id);
+                    $this->assertSame($firstmeeting->id, $forgedselection->selectedmeeting->id);
+                }
+                foreach ([$modulecontext, $systemcontext] as $reportcontext) {
+                    foreach (
+                        [
+                            \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
+                            \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
+                        ] as $reportclass
+                    ) {
+                        $PAGE = new \moodle_page();
+                        $PAGE->set_url(new \moodle_url('/'));
+                        $report = \core_reportbuilder\system_report_factory::create($reportclass, $reportcontext);
+                        $content = $report->output();
+                        $this->assertStringContainsString('Firstgroup', $content);
+                        $this->assertStringContainsString('Secondgroup', $content);
+                        $this->assertStringContainsString('First group session', $content);
+                        if ($expectedcount >= 2) {
+                            $this->assertStringContainsString('Second group session', $content);
+                        } else {
+                            $this->assertStringNotContainsString('Second group session', $content);
+                        }
+                        if ($accessallgroups) {
+                            $this->assertStringContainsString('Unknown group session', $content);
+                        } else {
+                            $this->assertStringNotContainsString('Unknown group session', $content);
+                        }
+                    }
                 }
             }
+        }
+
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $this->cmid]);
+        groups_remove_member($groupone->id, $restrictedviewer->id);
+        groups_add_member($grouptwo->id, $restrictedviewer->id);
+        rebuild_course_cache($course->id, true);
+        $this->setUser($restrictedviewer);
+        \core_reportbuilder\manager::reset_caches();
+        $data = dashboard_service::get_by_cmid($this->cmid);
+        $this->assertSame(1, $data->meetingcount);
+        $this->assertSame($secondmeeting->id, $data->selectedmeeting->id);
+        foreach ([$modulecontext, $systemcontext] as $reportcontext) {
+            foreach (
+                [
+                    \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
+                    \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
+                ] as $reportclass
+            ) {
+                $PAGE = new \moodle_page();
+                $PAGE->set_url(new \moodle_url('/'));
+                $report = \core_reportbuilder\system_report_factory::create($reportclass, $reportcontext);
+                $content = $report->output();
+                $this->assertStringNotContainsString('First group session', $content);
+                $this->assertStringContainsString('Second group session', $content);
+                $this->assertStringNotContainsString('Unknown group session', $content);
+            }
+        }
+        $DB->set_field('course_modules', 'groupmode', NOGROUPS, ['id' => $this->cmid]);
+        rebuild_course_cache($course->id, true);
+        \core_reportbuilder\manager::reset_caches();
+        $data = dashboard_service::get_by_cmid($this->cmid);
+        $this->assertSame(3, $data->meetingcount);
+        foreach (
+            [
+                \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
+                \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
+            ] as $reportclass
+        ) {
+            $PAGE = new \moodle_page();
+            $PAGE->set_url(new \moodle_url('/'));
+            $report = \core_reportbuilder\system_report_factory::create($reportclass, $systemcontext);
+            $this->assertStringContainsString('Unknown group session', $report->output());
+        }
+    }
+
+    /**
+     * Grouping and exact meeting IDs constrain visibility, including deleted groups.
+     */
+    public function test_group_visibility_respects_grouping_and_exact_identifiers(): void {
+        global $DB;
+
+        $generator = $this->getDataGenerator();
+        $cm = get_coursemodule_from_id('bigbluebuttonbn', $this->cmid, 0, false, MUST_EXIST);
+        $courseid = (int) $cm->course;
+        $viewer = $generator->create_user();
+        $generator->enrol_user($viewer->id, $courseid, 'student');
+        $allowedgroup = $generator->create_group(['courseid' => $courseid]);
+        $othergroup = $generator->create_group(['courseid' => $courseid]);
+        $generator->create_group_member(['groupid' => $allowedgroup->id, 'userid' => $viewer->id]);
+        $generator->create_group_member(['groupid' => $othergroup->id, 'userid' => $viewer->id]);
+        $grouping = $generator->create_grouping(['courseid' => $courseid]);
+        $generator->create_grouping_group(['groupid' => $allowedgroup->id, 'groupingid' => $grouping->id]);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $this->cmid]);
+        $DB->set_field('course_modules', 'groupingid', $grouping->id, ['id' => $this->cmid]);
+        $instance = \mod_bigbluebuttonbn\instance::get_from_cmid($this->cmid);
+        $allowedmeeting = $this->insert_meeting(1000);
+        $othermeeting = $this->insert_meeting(2000);
+        $malformedmeeting = $this->insert_meeting(3000);
+        foreach (
+            [
+                $allowedmeeting->id => $instance->get_meeting_id($allowedgroup->id),
+                $othermeeting->id => $instance->get_meeting_id($othergroup->id),
+                $malformedmeeting->id => $instance->get_meeting_id($allowedgroup->id) . ' ',
+            ] as $meetingid => $externalid
+        ) {
+            $DB->set_field('bbbext_bnx_datahub_meeting', 'externalmeetingid', $externalid, ['id' => $meetingid]);
+        }
+        rebuild_course_cache($courseid, true);
+        $this->setUser($viewer);
+        $this->assertFalse(has_capability('moodle/site:accessallgroups', \context_module::instance($this->cmid)));
+        $this->assertSame(SEPARATEGROUPS, (int) groups_get_activity_groupmode(get_fast_modinfo($courseid)->get_cm($this->cmid)));
+        [$visibilitysql, $visibilityparams] = meeting_service::get_report_visibility_sql('m', 'bbb', $this->cmid);
+        $visibilityparams['meetingid'] = $malformedmeeting->id;
+        $this->assertFalse($DB->record_exists_sql(
+            "SELECT m.id FROM {bbbext_bnx_datahub_meeting} m
+               JOIN {bbbext_bnx} bnx ON bnx.id = m.bnxid
+               JOIN {bigbluebuttonbn} bbb ON bbb.id = bnx.bigbluebuttonbnid
+              WHERE m.id = :meetingid AND $visibilitysql",
+            $visibilityparams
+        ));
+        $data = dashboard_service::get_by_cmid($this->cmid);
+        $this->assertSame(1, $data->meetingcount);
+        $this->assertSame($allowedmeeting->id, $data->selectedmeeting->id);
+
+        $DB->set_field('course_modules', 'groupmode', VISIBLEGROUPS, ['id' => $this->cmid]);
+        rebuild_course_cache($courseid, true);
+        $data = dashboard_service::get_by_cmid($this->cmid);
+        $this->assertSame(1, $data->meetingcount);
+        $this->assertSame($allowedmeeting->id, $data->selectedmeeting->id);
+
+        groups_delete_group($allowedgroup);
+        $data = dashboard_service::get_by_cmid($this->cmid);
+        $this->assertFalse($data->hasdata);
+    }
+
+    /**
+     * Exclusion actions cannot target sessions outside the viewer's groups.
+     */
+    public function test_exclusion_actions_respect_group_access(): void {
+        global $DB;
+
+        $generator = $this->getDataGenerator();
+        $cm = get_coursemodule_from_id('bigbluebuttonbn', $this->cmid, 0, false, MUST_EXIST);
+        $viewer = $generator->create_user();
+        $generator->enrol_user($viewer->id, $cm->course, 'student');
+        $allowedgroup = $generator->create_group(['courseid' => $cm->course]);
+        $othergroup = $generator->create_group(['courseid' => $cm->course]);
+        $generator->create_group_member(['groupid' => $allowedgroup->id, 'userid' => $viewer->id]);
+        $context = \context_module::instance($this->cmid);
+        $roleid = create_role('Group exclusion manager', 'groupexclusionmanager', 'Group exclusion manager');
+        assign_capability('bbbext/bnx_datahub:manageexclusions', CAP_ALLOW, $roleid, $context->id);
+        role_assign($roleid, $viewer->id, $context->id);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $this->cmid]);
+        $instance = \mod_bigbluebuttonbn\instance::get_from_cmid($this->cmid);
+        $allowedmeeting = $this->insert_meeting(1000);
+        $othermeeting = $this->insert_meeting(2000);
+        foreach ([$allowedmeeting->id => $allowedgroup->id, $othermeeting->id => $othergroup->id] as $meetingid => $groupid) {
+            $DB->set_field(
+                'bbbext_bnx_datahub_meeting',
+                'externalmeetingid',
+                $instance->get_meeting_id($groupid),
+                ['id' => $meetingid]
+            );
+        }
+        rebuild_course_cache($cm->course, true);
+        $this->setUser($viewer);
+        $this->assertTrue(exclusion_service::set_excluded($this->cmid, $allowedmeeting->id, true));
+        try {
+            exclusion_service::set_excluded($this->cmid, $othermeeting->id, true);
+            $this->fail('A viewer must not change another group\'s session.');
+        } catch (\moodle_exception $exception) {
+            $this->assertSame('invalidrecord', $exception->errorcode);
+        }
+        $this->assertSame('0', $DB->get_field('bbbext_bnx_datahub_meeting', 'excluded', ['id' => $othermeeting->id]));
+    }
+
+    /**
+     * Site-wide reports apply each activity's group access independently.
+     */
+    public function test_sitewide_reports_apply_group_access_per_activity(): void {
+        global $DB, $PAGE;
+
+        $generator = $this->getDataGenerator();
+        $cm = get_coursemodule_from_id('bigbluebuttonbn', $this->cmid, 0, false, MUST_EXIST);
+        $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
+        $viewer = $generator->create_user();
+        $attendee = $generator->create_user();
+        $generator->enrol_user($viewer->id, $course->id, 'student');
+        $systemcontext = \context_system::instance();
+        $roleid = create_role('Site report viewer', 'sitegroupreportviewer', 'Site report viewer');
+        assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $roleid, $systemcontext->id);
+        role_assign($roleid, $viewer->id, $systemcontext->id);
+        $modulecontext = \context_module::instance($this->cmid);
+        $allgroupsrole = create_role('Activity all groups', 'activityallgroups', 'Activity all groups');
+        assign_capability('moodle/site:accessallgroups', CAP_ALLOW, $allgroupsrole, $modulecontext->id);
+        role_assign($allgroupsrole, $viewer->id, $modulecontext->id);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $this->cmid]);
+        $firstmeeting = $this->insert_meeting(1000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Allowed activity session', ['id' => $firstmeeting->id]);
+        $this->insert_attendee($firstmeeting->id, $attendee->id);
+
+        $othercourse = $generator->create_course();
+        $otheractivity = $generator->create_module('bigbluebuttonbn', ['course' => $othercourse->id]);
+        $othercm = get_coursemodule_from_instance('bigbluebuttonbn', $otheractivity->id, 0, false, MUST_EXIST);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $othercm->id]);
+        $othergroup = $generator->create_group(['courseid' => $othercourse->id]);
+        $otherinstance = \mod_bigbluebuttonbn\instance::get_from_cmid($othercm->id);
+        $this->bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $otheractivity->id], '*', MUST_EXIST);
+        $othermeeting = $this->insert_meeting(2000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Restricted activity session', ['id' => $othermeeting->id]);
+        $DB->set_field(
+            'bbbext_bnx_datahub_meeting',
+            'externalmeetingid',
+            $otherinstance->get_meeting_id($othergroup->id),
+            ['id' => $othermeeting->id]
+        );
+        $this->insert_attendee($othermeeting->id, $attendee->id);
+        rebuild_course_cache($course->id, true);
+        rebuild_course_cache($othercourse->id, true);
+        $this->setUser($viewer);
+        $this->assertTrue(has_capability('moodle/site:accessallgroups', $modulecontext));
+        $this->assertFalse(has_capability('moodle/site:accessallgroups', \context_module::instance($othercm->id)));
+
+        foreach (
+            [
+                \bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class,
+                \bbbext_bnx_datahub\reportbuilder\local\systemreports\engagement::class,
+            ] as $reportclass
+        ) {
+            $PAGE = new \moodle_page();
+            $PAGE->set_url(new \moodle_url('/'));
+            $report = \core_reportbuilder\system_report_factory::create($reportclass, $systemcontext);
+            $content = $report->output();
+            $this->assertStringContainsString('Allowed activity session', $content);
+            $this->assertStringNotContainsString('Restricted activity session', $content);
         }
     }
 
