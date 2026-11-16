@@ -20,6 +20,7 @@ namespace bbbext_bnx_datahub\reportbuilder\datasource;
 
 use core_reportbuilder\datasource;
 use core_reportbuilder\local\entities\course;
+use bbbext_bnx_datahub\local\services\meeting_service;
 use bbbext_bnx_datahub\reportbuilder\local\entities\meeting;
 use bbbext_bnx_datahub\reportbuilder\local\entities\room;
 
@@ -45,6 +46,16 @@ class meetings extends datasource {
     }
 
     /**
+     * Return active columns after checking whether scheduled execution is permitted.
+     *
+     * @return array Active report columns.
+     */
+    public function get_active_columns(): array {
+        meeting_service::require_safe_custom_report_execution();
+        return parent::get_active_columns();
+    }
+
+    /**
      * Initialise the report
      */
     protected function initialise(): void {
@@ -66,6 +77,8 @@ class meetings extends datasource {
         $this->add_join("
             LEFT JOIN {bigbluebuttonbn} {$roomalias}
                 ON {$roomalias}.id = {$bnxalias}.bigbluebuttonbnid");
+        [$visibilitysql, $visibilityparams] = meeting_service::get_report_visibility_sql($meetingalias, $roomalias, null, true);
+        $this->add_base_condition_sql($visibilitysql, $visibilityparams);
 
         // Join the course entity for rooms.
         $courseentity = new course();

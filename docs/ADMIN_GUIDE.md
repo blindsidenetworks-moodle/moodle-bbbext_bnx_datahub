@@ -70,10 +70,19 @@ The built-in attendance and engagement pages accessed without an activity ID
 require the report capability at system context and apply group restrictions
 individually for each activity, including in downloads.
 
-Custom Report Builder reports use separate Moodle permissions and audiences.
-DataHub datasources can include site-wide data, including excluded sessions,
-without the DataHub report capability. Restrict report editing and review
-conditions and audiences; see [Data, Privacy, and Security](DATA_AND_PRIVACY.md).
+Custom Report Builder reports also require Moodle's report permissions and
+audience access. DataHub datasources show activity data only when the viewer has
+`bbbext/bnx_datahub:viewreports` for that activity. Session and attendee data
+follow the group visibility rules above; room metadata is filtered by activity
+permission. Existing custom reports may therefore show fewer rows. Excluded
+sessions remain available in custom reports unless a filter excludes them.
+
+Disable all schedules for custom reports using DataHub datasources, including
+recipient-view schedules. Moodle's standard scheduled and ad-hoc report sends
+reject these reports because recipient access cannot be reliably enforced for
+every delivery mode. A rejected recurring schedule can interrupt the scheduler
+run and delay other reports until that DataHub schedule is disabled. See
+[Data, Privacy, and Security](DATA_AND_PRIVACY.md).
 
 The reports use Moodle Report Builder. They display session attendance and
 engagement collected from BigBlueButton meeting-event callbacks. Use Moodle's

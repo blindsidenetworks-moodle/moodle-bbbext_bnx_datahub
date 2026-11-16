@@ -30,19 +30,27 @@ default.
 
 DataHub also supplies custom Report Builder datasources. When custom reports are
 enabled, users with `moodle/reportbuilder:edit` or `moodle/reportbuilder:editall`
-can create reports, subject to Moodle's report limit. DataHub's datasources have
-no default course, group, or session exclusion conditions, so reports can contain
-site-wide data independently of `bbbext/bnx_datahub:viewreports`. A report's
-audience and Moodle Report Builder capabilities govern who can view it; audience
-members can view it without the DataHub reporting capability. Report editors and
-users with `moodle/reportbuilder:viewall` can also view reports as permitted by
-Moodle. Adding a manual audience requires `moodle/user:viewalldetails` at system
-context.
+can create reports, subject to Moodle's report limit. Moodle Report Builder
+capabilities and the report's audience govern who can view a report; adding a
+manual audience requires `moodle/user:viewalldetails` at system context. In
+addition, DataHub datasources require `bbbext/bnx_datahub:viewreports` in each
+activity context for its rows to be visible. Session and attendee rows also use
+the activity's group visibility rules described in the administrator guide;
+room metadata requires the activity permission but is not group-specific.
+These restrictions also apply to report editors and users with
+`moodle/reportbuilder:viewall`, and can reduce rows in existing reports.
 
 Limit Report Builder permissions to trusted roles and review custom report
-conditions, audiences, sharing, scheduled delivery, and downloads before exposing
-personal data. Session exclusion does not automatically exclude data from custom
-reports; use the **Excluded from default reports** filter when appropriate.
+conditions, audiences, sharing, and downloads before exposing personal data.
+Session exclusion does not automatically exclude data from custom reports; use
+the **Excluded from default reports** filter when appropriate.
+
+Disable existing and future schedules for reports using DataHub datasources.
+Standard Moodle scheduled and ad-hoc report sends are rejected for all view-as
+modes, including recipient view. A rejected recurring schedule can stop that
+scheduler run before unrelated reports are sent, and will continue to do so
+until the DataHub schedule is disabled. Interactive reports and downloads use
+the current viewer's permissions and group visibility.
 
 Changing session exclusion requires `bbbext/bnx_datahub:manageexclusions` at
 the activity context. Changes are logged as Moodle events. Exclusion only changes

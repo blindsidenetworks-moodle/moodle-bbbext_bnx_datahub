@@ -104,9 +104,15 @@ class meeting_service {
      * @param string $meetingalias Meeting table alias.
      * @param string $roomalias BigBlueButton activity table alias.
      * @param int|null $cmid Restrict activity discovery to this course module, if supplied.
+     * @param bool $requirepermission Whether to require the DataHub report capability for each activity.
      * @return array SQL condition and parameters.
      */
-    public static function get_report_visibility_sql(string $meetingalias, string $roomalias, ?int $cmid = null): array {
+    public static function get_report_visibility_sql(
+        string $meetingalias,
+        string $roomalias,
+        ?int $cmid = null,
+        bool $requirepermission = false
+    ): array {
         global $DB, $USER;
 
         $params = [];
@@ -129,6 +135,9 @@ class meeting_service {
         $visible = [];
         $separate = [];
         foreach ($modules as $module) {
+            if ($requirepermission && !has_capability('bbbext/bnx_datahub:viewreports', \context_module::instance($module->id))) {
+                continue;
+            }
             $activity = get_fast_modinfo((int) $module->course)->get_cm((int) $module->id);
             $groupmode = (int) groups_get_activity_groupmode($activity);
             if ($groupmode === NOGROUPS || has_capability('moodle/site:accessallgroups', \context_module::instance($module->id))) {
@@ -177,6 +186,41 @@ class meeting_service {
         )";
 
         return [$condition, [$useridparam => (int) $USER->id]];
+    }
+
+    /**
+     * Build the activity permission condition for the custom rooms datasource.
+     *
+     * @param string $roomalias BigBlueButton activity table alias.
+     * @return string SQL condition.
+     */
+    public static function get_report_room_visibility_sql(string $roomalias): string {
+        global $DB;
+
+        $modules = $DB->get_records_sql(
+            "SELECT cm.id, cm.instance
+               FROM {course_modules} cm
+               JOIN {modules} mdl ON mdl.id = cm.module AND mdl.name = 'bigbluebuttonbn'
+              WHERE cm.deletioninprogress = 0"
+        );
+        $activities = [];
+        foreach ($modules as $module) {
+            if (has_capability('bbbext/bnx_datahub:viewreports', \context_module::instance($module->id))) {
+                $activities[] = (int) $module->instance;
+            }
+        }
+
+        return empty($activities) ? '1 = 0' : "$roomalias.id IN (" . implode(',', $activities) . ')';
+    }
+
+    /**
+     * Reject scheduled custom reports that cannot enforce access for every recipient.
+     */
+    public static function require_safe_custom_report_execution(): void {
+        $task = \core\task\manager::$runningtask;
+        if ($task instanceof \core_reportbuilder\task\send_schedule || $task instanceof \core_reportbuilder\task\send_schedules) {
+            throw new \moodle_exception('scheduledreportsnotavailable', 'bbbext_bnx_datahub');
+        }
     }
 
     /**

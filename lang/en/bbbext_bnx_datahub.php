@@ -158,3 +158,4 @@ $string['roomname'] = 'Room name';
 $string['rooms'] = 'Rooms';
 $string['roomtimecreated'] = 'Room time created';
 $string['roomtimemodified'] = 'Room time modified';
+$string['scheduledreportsnotavailable'] = 'Scheduled DataHub custom reports are unavailable because recipient access cannot be enforced.';

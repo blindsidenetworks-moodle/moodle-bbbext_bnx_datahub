@@ -514,7 +514,7 @@ final class dashboard_service_test extends advanced_testcase {
     }
 
     /**
-     * Custom report audiences can see cross-activity data without the DataHub reporting capability.
+     * Custom report audiences need the DataHub reporting capability to see activity data.
      */
     public function test_custom_report_datasource_access_and_audience(): void {
         global $DB, $PAGE;
@@ -587,9 +587,271 @@ final class dashboard_service_test extends advanced_testcase {
         }
         $table->close_recordset();
         $content = implode(' ', $rows);
-        $this->assertCount(2, $rows);
-        $this->assertStringContainsString('User ' . $firstuser->id, $content);
-        $this->assertStringContainsString('User ' . $seconduser->id, $content);
+        $this->assertCount(0, $rows);
+        $this->assertStringNotContainsString('User ' . $firstuser->id, $content);
+        $this->assertStringNotContainsString('User ' . $seconduser->id, $content);
+    }
+
+    /**
+     * Query the visible rows of a custom report as the current user.
+     *
+     * @param int $reportid Report ID.
+     * @return array Formatted report rows.
+     */
+    private function get_custom_report_rows(int $reportid): array {
+        global $PAGE;
+
+        $PAGE = new \moodle_page();
+        $PAGE->set_url(new \moodle_url('/'));
+        $table = \core_reportbuilder\table\custom_report_table_view::create($reportid);
+        $table->setup();
+        $table->query_db(30, false);
+        $rows = [];
+        foreach ($table->rawdata as $row) {
+            $rows[] = implode(' ', $table->format_row($row));
+        }
+        $table->close_recordset();
+        return $rows;
+    }
+
+    /**
+     * Custom datasources enforce activity permissions and group session visibility.
+     */
+    public function test_custom_datasources_filter_per_viewer(): void {
+        global $DB;
+
+        $this->setAdminUser();
+        $generator = $this->getDataGenerator();
+        $cm = get_coursemodule_from_id('bigbluebuttonbn', $this->cmid, 0, false, MUST_EXIST);
+        $DB->set_field('bigbluebuttonbn', 'name', 'Allowed room', ['id' => $cm->instance]);
+        $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $this->cmid]);
+        $groupone = $generator->create_group(['courseid' => $cm->course]);
+        $grouptwo = $generator->create_group(['courseid' => $cm->course]);
+        $viewerone = $generator->create_user();
+        $viewertwo = $generator->create_user();
+        $unprivileged = $generator->create_user();
+        foreach ([$viewerone, $viewertwo, $unprivileged] as $viewer) {
+            $generator->enrol_user($viewer->id, $cm->course, 'student');
+        }
+        $generator->create_group_member(['groupid' => $groupone->id, 'userid' => $viewerone->id]);
+        $generator->create_group_member(['groupid' => $grouptwo->id, 'userid' => $viewertwo->id]);
+        $generator->create_group_member(['groupid' => $groupone->id, 'userid' => $unprivileged->id]);
+        $roleid = create_role('Custom data viewer', 'customdataviewer', 'Custom data viewer');
+        $systemcontext = \context_system::instance();
+        assign_capability('moodle/reportbuilder:view', CAP_ALLOW, $roleid, $systemcontext->id);
+        foreach ([$viewerone, $viewertwo, $unprivileged] as $viewer) {
+            role_assign($roleid, $viewer->id, $systemcontext->id);
+        }
+        $reportrole = create_role('Activity data viewer', 'activitydataviewer', 'Activity data viewer');
+        $modulecontext = \context_module::instance($this->cmid);
+        assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $reportrole, $modulecontext->id);
+        role_assign($reportrole, $viewerone->id, $modulecontext->id);
+        role_assign($reportrole, $viewertwo->id, $modulecontext->id);
+        $prohibitrole = create_role('Prohibited data viewer', 'prohibiteddataviewer', 'Prohibited data viewer');
+        assign_capability('bbbext/bnx_datahub:viewreports', CAP_PROHIBIT, $prohibitrole, $modulecontext->id);
+
+        $instance = \mod_bigbluebuttonbn\instance::get_from_cmid($this->cmid);
+        $firstmeeting = $this->insert_meeting(1000);
+        $secondmeeting = $this->insert_meeting(2000);
+        foreach ([$firstmeeting->id => $groupone->id, $secondmeeting->id => $grouptwo->id] as $meetingid => $groupid) {
+            $DB->set_field(
+                'bbbext_bnx_datahub_meeting',
+                'externalmeetingid',
+                $instance->get_meeting_id($groupid),
+                ['id' => $meetingid]
+            );
+        }
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'First group session', ['id' => $firstmeeting->id]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'excluded', 1, ['id' => $firstmeeting->id]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Second group session', ['id' => $secondmeeting->id]);
+        $this->insert_attendee($firstmeeting->id, $viewerone->id);
+        $this->insert_attendee($secondmeeting->id, $viewertwo->id);
+
+        $othercourse = $generator->create_course();
+        $otheractivity = $generator->create_module('bigbluebuttonbn', ['course' => $othercourse->id, 'name' => 'Forbidden room']);
+        $this->bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $otheractivity->id], '*', MUST_EXIST);
+        $othermeeting = $this->insert_meeting(3000);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'meetingname', 'Forbidden session', ['id' => $othermeeting->id]);
+        $this->insert_attendee($othermeeting->id, $unprivileged->id);
+
+        $emptyactivity = $generator->create_module('bigbluebuttonbn', ['course' => $cm->course, 'name' => 'Empty room']);
+        $emptycm = get_coursemodule_from_instance('bigbluebuttonbn', $emptyactivity->id, 0, false, MUST_EXIST);
+        $emptycontext = \context_module::instance($emptycm->id);
+        assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $reportrole, $emptycontext->id);
+        role_assign($reportrole, $viewerone->id, $emptycontext->id);
+        role_assign($reportrole, $viewertwo->id, $emptycontext->id);
+        rebuild_course_cache($cm->course, true);
+
+        $reportgenerator = $generator->get_plugin_generator('core_reportbuilder');
+        foreach (
+            [
+                \bbbext_bnx_datahub\reportbuilder\datasource\attendees::class => 'meeting:name',
+                \bbbext_bnx_datahub\reportbuilder\datasource\engagement::class => 'meeting:name',
+                \bbbext_bnx_datahub\reportbuilder\datasource\meetings::class => 'meeting:name',
+                \bbbext_bnx_datahub\reportbuilder\datasource\rooms::class => 'room:name',
+            ] as $sourceclass => $column
+        ) {
+            $this->setAdminUser();
+            $report = $reportgenerator->create_report([
+                'name' => 'DataHub custom report',
+                'source' => $sourceclass,
+                'default' => false,
+            ]);
+            $reportgenerator->create_column(['reportid' => $report->get('id'), 'uniqueidentifier' => $column]);
+            $reportgenerator->create_audience([
+                'reportid' => $report->get('id'),
+                'classname' => \core_reportbuilder\reportbuilder\audience\manual::class,
+                'configdata' => ['users' => [$viewerone->id, $viewertwo->id, $unprivileged->id]],
+            ]);
+            foreach ([$viewerone, $viewertwo, $unprivileged] as $viewer) {
+                $this->setUser($viewer);
+                $this->assertTrue(\core_reportbuilder\permission::can_view_report($report));
+                $rows = $this->get_custom_report_rows($report->get('id'));
+                $content = implode(' ', $rows);
+                $this->assertStringNotContainsString('Forbidden', $content);
+                if ($viewer->id === $unprivileged->id) {
+                    $this->assertCount(0, $rows);
+                } else if ($sourceclass === \bbbext_bnx_datahub\reportbuilder\datasource\rooms::class) {
+                    $this->assertCount(2, $rows);
+                    $this->assertStringContainsString('Allowed room', $content);
+                    $this->assertStringContainsString('Empty room', $content);
+                } else {
+                    $this->assertCount(1, $rows);
+                    $this->assertStringContainsString(
+                        $viewer->id === $viewerone->id ? 'First group session' : 'Second group session',
+                        $content
+                    );
+                }
+            }
+
+            $this->setAdminUser();
+            role_assign($prohibitrole, $viewerone->id, $modulecontext->id);
+            \core_reportbuilder\manager::reset_caches();
+            $this->setUser($viewerone);
+            $rows = $this->get_custom_report_rows($report->get('id'));
+            if ($sourceclass === \bbbext_bnx_datahub\reportbuilder\datasource\rooms::class) {
+                $this->assertCount(1, $rows);
+                $this->assertStringContainsString('Empty room', implode(' ', $rows));
+            } else {
+                $this->assertCount(0, $rows);
+            }
+            $this->setAdminUser();
+            role_unassign($prohibitrole, $viewerone->id, $modulecontext->id);
+            \core_reportbuilder\manager::reset_caches();
+
+            if ($sourceclass !== \bbbext_bnx_datahub\reportbuilder\datasource\rooms::class) {
+                foreach ([VISIBLEGROUPS, NOGROUPS] as $groupmode) {
+                    $DB->set_field('course_modules', 'groupmode', $groupmode, ['id' => $this->cmid]);
+                    rebuild_course_cache($cm->course, true);
+                    \core_reportbuilder\manager::reset_caches();
+                    $this->setUser($viewerone);
+                    $rows = $this->get_custom_report_rows($report->get('id'));
+                    $this->assertCount(2, $rows);
+                    $this->assertStringContainsString('First group session', implode(' ', $rows));
+                    $this->assertStringContainsString('Second group session', implode(' ', $rows));
+                }
+                $this->setAdminUser();
+                $DB->set_field('course_modules', 'groupmode', SEPARATEGROUPS, ['id' => $this->cmid]);
+                rebuild_course_cache($cm->course, true);
+                \core_reportbuilder\manager::reset_caches();
+                $this->setUser($viewerone);
+                $this->assertCount(1, $this->get_custom_report_rows($report->get('id')));
+                $this->setAdminUser();
+                groups_remove_member($groupone->id, $viewerone->id);
+                $this->setUser($viewerone);
+                $this->assertCount(0, $this->get_custom_report_rows($report->get('id')));
+                $this->setAdminUser();
+                groups_add_member($groupone->id, $viewerone->id);
+                $this->setUser($viewerone);
+                $this->assertCount(1, $this->get_custom_report_rows($report->get('id')));
+            }
+        }
+    }
+
+    /**
+     * Scheduled sends must not deliver DataHub reports in any view-as mode.
+     */
+    public function test_custom_report_schedule_send_is_blocked(): void {
+        $this->setAdminUser();
+        $generator = $this->getDataGenerator();
+        $recipient = $generator->create_user();
+        $viewasuser = $generator->create_user();
+        $reportgenerator = $generator->get_plugin_generator('core_reportbuilder');
+        $report = $reportgenerator->create_report([
+            'name' => 'Scheduled DataHub report',
+            'source' => \bbbext_bnx_datahub\reportbuilder\datasource\meetings::class,
+        ]);
+        $audience = $reportgenerator->create_audience([
+            'reportid' => $report->get('id'),
+            'classname' => \core_reportbuilder\reportbuilder\audience\manual::class,
+            'configdata' => ['users' => [$recipient->id]],
+        ]);
+        $sink = $this->redirectEmails();
+        $this->expectOutputRegex('/Sending schedule: Scheduled DataHub/');
+        foreach (
+            [
+                \core_reportbuilder\local\models\schedule::REPORT_VIEWAS_CREATOR,
+                \core_reportbuilder\local\models\schedule::REPORT_VIEWAS_RECIPIENT,
+                $viewasuser->id,
+            ] as $viewas
+        ) {
+            $this->setAdminUser();
+            $schedule = $reportgenerator->create_schedule([
+                'reportid' => $report->get('id'),
+                'name' => 'Scheduled DataHub',
+                'userviewas' => $viewas,
+                'audiences' => json_encode([$audience->get_persistent()->get('id')]),
+                'configdata' => json_encode(['subject' => 'Report', 'message' => ['text' => 'Report', 'format' => 1]]),
+            ]);
+            $task = new \core_reportbuilder\task\send_schedule();
+            $task->set_custom_data(['reportid' => $report->get('id'), 'scheduleid' => $schedule->get('id')]);
+            \core\task\manager::$runningtask = $task;
+            try {
+                $task->execute();
+                $this->fail('Scheduled DataHub reports must not be sent.');
+            } catch (\moodle_exception $exception) {
+                $this->assertSame('scheduledreportsnotavailable', $exception->errorcode);
+            } finally {
+                \core\task\manager::$runningtask = null;
+                $this->setAdminUser();
+            }
+        }
+        $this->assertCount(0, $sink->get_messages());
+        $sink->close();
+    }
+
+    /**
+     * Scheduled DataHub reports must fail closed even when their datasource is cached.
+     */
+    public function test_custom_report_schedules_are_blocked(): void {
+        $this->setAdminUser();
+        $generator = $this->getDataGenerator()->get_plugin_generator('core_reportbuilder');
+        foreach (
+            [
+                \bbbext_bnx_datahub\reportbuilder\datasource\attendees::class,
+                \bbbext_bnx_datahub\reportbuilder\datasource\engagement::class,
+                \bbbext_bnx_datahub\reportbuilder\datasource\meetings::class,
+                \bbbext_bnx_datahub\reportbuilder\datasource\rooms::class,
+            ] as $sourceclass
+        ) {
+            $report = $generator->create_report(['name' => 'Scheduled report', 'source' => $sourceclass]);
+            $source = \core_reportbuilder\manager::get_report_from_persistent($report);
+            $source->get_active_columns();
+            foreach (
+                [\core_reportbuilder\task\send_schedule::class, \core_reportbuilder\task\send_schedules::class] as $taskclass
+            ) {
+                \core\task\manager::$runningtask = new $taskclass();
+                try {
+                    \core_reportbuilder\table\custom_report_table_view::create($report->get('id'));
+                    $this->fail('Scheduled DataHub reports must not be generated.');
+                } catch (\moodle_exception $exception) {
+                    $this->assertSame('scheduledreportsnotavailable', $exception->errorcode);
+                } finally {
+                    \core\task\manager::$runningtask = null;
+                }
+            }
+            $source->get_active_columns();
+        }
     }
 
     /**
