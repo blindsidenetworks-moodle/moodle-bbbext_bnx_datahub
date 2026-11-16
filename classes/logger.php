@@ -114,14 +114,12 @@ class logger {
     }
 
     /**
-     * Convert a callback duration to seconds, falling back to valid meeting timestamps.
+     * Parse a callback duration without substituting a value for invalid input.
      *
      * @param mixed $duration Callback duration.
-     * @param int|false $start Parsed start timestamp.
-     * @param int|false $finish Parsed finish timestamp.
-     * @return int Duration in seconds.
+     * @return int|null Duration in seconds, or null when invalid.
      */
-    private static function meeting_duration(mixed $duration, int|false $start, int|false $finish): int {
+    public static function parse_callback_duration(mixed $duration): ?int {
         $maxduration = 2147483647;
         if (is_int($duration) || (is_string($duration) && ctype_digit($duration))) {
             if ($duration >= 0 && (float) $duration <= $maxduration) {
@@ -133,8 +131,23 @@ class logger {
                 return $seconds;
             }
         }
+        return null;
+    }
 
-        if ($start !== false && $finish !== false && $finish >= $start && $finish - $start <= $maxduration) {
+    /**
+     * Convert a callback duration to seconds, falling back to valid meeting timestamps.
+     *
+     * @param mixed $duration Callback duration.
+     * @param int|false $start Parsed start timestamp.
+     * @param int|false $finish Parsed finish timestamp.
+     * @return int Duration in seconds.
+     */
+    private static function meeting_duration(mixed $duration, int|false $start, int|false $finish): int {
+        $parsed = self::parse_callback_duration($duration);
+        if ($parsed !== null) {
+            return $parsed;
+        }
+        if ($start !== false && $finish !== false && $finish >= $start && $finish - $start <= 2147483647) {
             return $finish - $start;
         }
         return 0;

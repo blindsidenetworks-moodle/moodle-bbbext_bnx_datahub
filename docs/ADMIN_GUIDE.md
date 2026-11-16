@@ -120,6 +120,35 @@ Review the result and leave the legacy reporting sidecar disabled after a
 successful migration. Running both reporting engines can produce confusing or
 duplicate operational data.
 
+## Historical meeting durations
+
+DataHub 1.1.2 could store an incorrect meeting duration.
+Upgrading does not change existing durations. Moodle's Status report and the
+DataHub settings page warn if a stored duration differs from a valid retained
+callback for the same meeting. The check scans historical meeting records and
+can take time on large sites.
+
+Back up the site, then preview proposed corrections from the Moodle root:
+
+```bash
+php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/repair_durations.php
+```
+
+Review the listed meeting IDs and duration changes. Records without a valid,
+matching retained callback are listed as ambiguous and are not changed. The
+absence of a warning does not verify these records. After review, run:
+
+```bash
+php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/repair_durations.php --apply
+```
+
+The apply command scans current data again, so its candidates can differ from
+the preview. Schedule a quiet maintenance period if the reviewed set must remain
+stable. Each record is locked and rechecked before it is updated; a record that
+changed during the scan is skipped. Repeat the preview to review remaining
+discrepancies. Apply supports Moodle's MySQL/MariaDB, PostgreSQL and SQL Server
+database families.
+
 ## Orphan attendee cleanup
 
 Older DataHub versions may have stored attendee records without a meeting.

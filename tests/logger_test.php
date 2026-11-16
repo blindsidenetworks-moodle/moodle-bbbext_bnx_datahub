@@ -181,6 +181,159 @@ final class logger_test extends advanced_testcase {
     }
 
     /**
+     * Only valid callback durations can be used as evidence for historical repairs.
+     */
+    public function test_parse_callback_duration_for_repair(): void {
+        foreach (
+            [
+                [16, 16],
+                ['3600', 3600],
+                ['01:02:03', 3723],
+                [0, 0],
+                [null, null],
+                ['invalid', null],
+                [-1, null],
+                [2147483648, null],
+                [1.5, null],
+            ] as [$value, $expected]
+        ) {
+            $this->assertSame($expected, logger::parse_callback_duration($value));
+        }
+    }
+
+    /**
+     * Historical repair uses only retained callbacks matching the meeting.
+     */
+    public function test_historical_duration_candidates(): void {
+        $meeting = (object) [
+            'internalmeetingid' => 'internal-123',
+            'duration' => 999,
+            'rawdata' => json_encode(['internal_meeting_id' => 'internal-123', 'data' => ['duration' => 16]]),
+        ];
+        $service = \bbbext_bnx_datahub\local\services\duration_repair_service::class;
+        $this->assertSame(16, $service::expected_duration($meeting));
+        $meeting->duration = 16;
+        $this->assertSame(16, $service::expected_duration($meeting));
+        $meeting->duration = 999;
+        foreach (
+            [
+                null,
+                '{invalid',
+                json_encode(['internal_meeting_id' => 'other', 'data' => ['duration' => 16]]),
+                json_encode(['internal_meeting_id' => 'internal-123', 'data' => ['duration' => 'invalid']]),
+                json_encode(['internal_meeting_id' => 'internal-123', 'data' => []]),
+            ] as $rawdata
+        ) {
+            $meeting->rawdata = $rawdata;
+            $this->assertNull($service::expected_duration($meeting));
+        }
+    }
+
+    /**
+     * Preview and repair only records with matching retained callback evidence.
+     */
+    public function test_historical_duration_preview_and_repair(): void {
+        global $DB;
+
+        [, $bbb] = $this->create_bbb_with_bnx();
+        $instance = instance::get_from_cmid($bbb->cmid);
+        $firstdata = $this->create_meeting_data('external-first', 'internal-first');
+        $firstdata->data->duration = 16;
+        $firstid = logger::log_meeting($instance, $firstdata);
+        $seconddata = $this->create_meeting_data('external-second', 'internal-second');
+        $secondid = logger::log_meeting($instance, $seconddata);
+        $thirddata = $this->create_meeting_data('external-third', 'internal-third');
+        $thirdid = logger::log_meeting($instance, $thirddata);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'duration', 999, ['id' => $firstid]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'duration', 999, ['id' => $thirdid]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'rawdata', '{invalid', ['id' => $thirdid]);
+
+        $service = \bbbext_bnx_datahub\local\services\duration_repair_service::class;
+        $check = new \bbbext_bnx_datahub\check\duration_discrepancies();
+        $this->assertSame(\core\check\result::WARNING, $check->get_result()->get_status());
+        $results = [];
+        $collect = static function (stdClass $meeting, ?int $expected, string $status) use (&$results): void {
+            $results[] = [$meeting->id, $meeting->duration, $expected, $status];
+        };
+        $preview = $service::scan($collect);
+        $this->assertSame(3, $preview['scanned']);
+        $this->assertSame(1, $preview['ambiguous']);
+        $this->assertSame(1, $preview['discrepancies']);
+        $this->assertEquals([[$firstid, 999, 16, 'preview'], [$thirdid, 999, null, 'ambiguous']], $results);
+        $this->assertEquals(999, $DB->get_field('bbbext_bnx_datahub_meeting', 'duration', ['id' => $firstid]));
+
+        $results = [];
+        $applied = $service::scan($collect, true);
+        $this->assertSame(1, $applied['updated']);
+        $this->assertEquals([[$firstid, 999, 16, 'updated'], [$thirdid, 999, null, 'ambiguous']], $results);
+        $this->assertEquals(16, $DB->get_field('bbbext_bnx_datahub_meeting', 'duration', ['id' => $firstid]));
+        $this->assertEquals(3600, $DB->get_field('bbbext_bnx_datahub_meeting', 'duration', ['id' => $secondid]));
+        $this->assertEquals(999, $DB->get_field('bbbext_bnx_datahub_meeting', 'duration', ['id' => $thirdid]));
+        $this->assertSame(0, $service::scan($collect, true)['updated']);
+        $this->assertSame(\core\check\result::OK, $check->get_result()->get_status());
+    }
+
+    /**
+     * The repair skips a candidate changed after it was scanned.
+     */
+    public function test_historical_duration_repair_skips_changed_records(): void {
+        global $DB;
+
+        [, $bbb] = $this->create_bbb_with_bnx();
+        $instance = instance::get_from_cmid($bbb->cmid);
+        $firstdata = $this->create_meeting_data('external-first', 'internal-first');
+        $seconddata = $this->create_meeting_data('external-second', 'internal-second');
+        $firstid = logger::log_meeting($instance, $firstdata);
+        $secondid = logger::log_meeting($instance, $seconddata);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'duration', 999, ['id' => $firstid]);
+        $DB->set_field('bbbext_bnx_datahub_meeting', 'duration', 999, ['id' => $secondid]);
+        $results = [];
+        $counts = \bbbext_bnx_datahub\local\services\duration_repair_service::scan(
+            static function (stdClass $meeting, ?int $expected, string $status) use ($DB, $firstid, $secondid, &$results): void {
+                $results[$meeting->id] = $status;
+                if ((int) $meeting->id === $firstid) {
+                    $DB->set_field('bbbext_bnx_datahub_meeting', 'rawdata', '{changed', ['id' => $secondid]);
+                }
+            },
+            true
+        );
+        $this->assertSame(1, $counts['updated']);
+        $this->assertSame(1, $counts['changed']);
+        $this->assertSame('updated', $results[$firstid]);
+        $this->assertSame('changed', $results[$secondid]);
+        $this->assertEquals(999, $DB->get_field('bbbext_bnx_datahub_meeting', 'duration', ['id' => $secondid]));
+    }
+
+    /**
+     * The administrator check finds discrepancies beyond the first scan batch.
+     */
+    public function test_historical_duration_scan_crosses_batches(): void {
+        global $DB;
+
+        [, , $bnx] = $this->create_bbb_with_bnx();
+        $meetings = [];
+        for ($number = 1; $number <= 101; $number++) {
+            $internalid = 'batch-' . $number;
+            $meetings[] = (object) [
+                'bnxid' => $bnx->id,
+                'externalmeetingid' => $internalid,
+                'internalmeetingid' => $internalid,
+                'meetingname' => 'Batch meeting',
+                'duration' => $number === 101 ? 999 : 16,
+                'rawdata' => json_encode(['internal_meeting_id' => $internalid, 'data' => ['duration' => 16]]),
+            ];
+        }
+        $DB->insert_records('bbbext_bnx_datahub_meeting', $meetings);
+        $counts = \bbbext_bnx_datahub\local\services\duration_repair_service::scan(null, false, true);
+        $this->assertSame(101, $counts['scanned']);
+        $this->assertSame(1, $counts['discrepancies']);
+        $check = new \bbbext_bnx_datahub\check\duration_discrepancies();
+        $this->assertSame(\core\check\result::WARNING, $check->get_result()->get_status());
+        $checkclasses = array_map('get_class', \core\check\manager::get_status_checks());
+        $this->assertContains(\bbbext_bnx_datahub\check\duration_discrepancies::class, $checkclasses);
+    }
+
+    /**
      * Test duration values and fallback timestamps.
      */
     public function test_log_meeting_duration_fallbacks(): void {

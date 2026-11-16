@@ -36,6 +36,7 @@ if ($ADMIN->fulltree) {
         new \bbbext_bnx_datahub\check\bnx_enabled(),
         new \bbbext_bnx_datahub\check\meetingevents_enabled(),
         new \bbbext_bnx_datahub\check\bnreports_migration_pending(),
+        new \bbbext_bnx_datahub\check\duration_discrepancies(),
     ];
     foreach ($datahubchecks as $datahubcheck) {
         $checkresult = $datahubcheck->get_result();

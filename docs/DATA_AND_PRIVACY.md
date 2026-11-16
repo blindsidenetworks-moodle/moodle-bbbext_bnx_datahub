@@ -12,8 +12,10 @@ DataHub records BigBlueButton meeting callbacks in two tables:
 Meeting duration is stored in seconds. When the callback duration is missing or
 invalid, DataHub uses the elapsed time between valid start and finish timestamps,
 or zero if those timestamps cannot provide a valid duration. Previously stored
-durations are not automatically corrected; identifying and repairing affected
-records requires an agreed policy that preserves valid values.
+durations are not automatically corrected. Administrators can preview and
+explicitly repair discrepancies supported by retained matching callbacks; see
+the historical meeting durations section of the administrator guide. Records
+without usable callback evidence require separate review.
 
 The attendee table may represent a guest without a Moodle user ID. It is still
 activity-context analytics data and must be treated as potentially personal
