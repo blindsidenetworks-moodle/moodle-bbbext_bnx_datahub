@@ -29,8 +29,22 @@ is responsible for authenticating and dispatching BigBlueButton events.
 DataHub checks the meeting ID against the parent activity using the parent's
 group-aware prefix rule and rejects an internal meeting ID already linked to a
 different activity. The parent does not pass its callback result to the addon,
-so replays still reach DataHub and can update existing records. This permits
-retries after partial ingestion but does not prevent changed replay payloads.
+so callbacks the parent identifies as already processed still reach DataHub.
+DataHub upserts the meeting and eligible attendees present in the new payload;
+changed values can overwrite earlier metrics even though the parent does not
+process the meeting events again. Reprocessing can also complete DataHub writes
+after a partial failure, so rejecting every repeated callback would prevent
+that recovery path. DataHub does not track whether a previous ingestion fully
+completed or guarantee atomicity across the entire callback.
+
+The upstream BigBlueButton analytics callback scripts for
+[2.7.0](https://github.com/bigbluebutton/bigbluebutton/blob/v2.7.0/record-and-playback/core/scripts/post_events/post_events_analytics_callback.rb)
+and [3.0.17](https://github.com/bigbluebutton/bigbluebutton/blob/v3.0.17/record-and-playback/core/scripts/post_events/post_events_analytics_callback.rb)
+send one request per script invocation, log HTTP failures, and do not implement
+an explicit retry loop. They regenerate the payload from meeting events on each
+invocation. This does not establish whether other versions or deployments retry,
+or whether repeated payloads differ in practice; no live callbacks were captured
+for this investigation.
 
 ## Persistence services
 

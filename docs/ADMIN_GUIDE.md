@@ -108,6 +108,14 @@ BNX record.
 DataHub reacts to BNX state changes by adjusting only its own enabled state.
 Re-enable DataHub after resolving a BNX prerequisite through Plugins overview.
 
+Repeated analytics callbacks can update DataHub's stored meeting and attendee
+metrics, even when Moodle has already processed that meeting's events. This can
+help complete a partially processed callback, but changed values may overwrite
+earlier results. The BigBlueButton 2.7.0 and 3.0.17 callback scripts do not
+explicitly retry failed requests; behavior in other deployments may differ.
+Investigate callback failures in the BigBlueButton analytics callback log and
+the Moodle logs. Treat callback logs as potentially containing personal data.
+
 ## Legacy BN Reports migration
 
 Use the migration command only when migrating an existing BN Reports install:
