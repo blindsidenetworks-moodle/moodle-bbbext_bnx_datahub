@@ -6,6 +6,22 @@ DataHub `1.2-beta.1` supports Moodle 5.3 and requires BNX 1.3 or later
 (minimum version code `2026110500`). Both plugins are beta releases; use
 matching Moodle 5.3-compatible builds.
 
+## Upgrading from an older Moodle release
+
+DataHub `1.2-beta.1` cannot be installed or upgraded on Moodle versions older
+than 5.3. Plan the Moodle upgrade first, following the Moodle upgrade guidance,
+and select compatible versions of BNX, DataHub, and other installed plugins for
+the target release. Do not attempt to install or upgrade this DataHub build on
+the older Moodle release.
+
+Back up the site and test the complete upgrade on a staging copy before
+production. Moodle may require compatible core and plugin code to be deployed
+together for the same maintenance upgrade. Complete the upgrade to Moodle 5.3
+with the required BNX version, then check the DataHub prerequisites below.
+Before promoting a DataHub release, verify PHPUnit and Behat results on Moodle 5.3 with MariaDB and
+PostgreSQL for the exact release commit. Testing on Moodle 6 development builds
+does not establish support for Moodle 6 or replace the Moodle 5.3 checks.
+
 ## Install and prerequisites
 
 1. Install and configure `mod_bigbluebuttonbn`.
