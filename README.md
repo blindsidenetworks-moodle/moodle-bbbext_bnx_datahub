@@ -30,7 +30,7 @@ DataHub receives analytics callbacks after a BigBlueButton session ends. It stor
 
 ## Requirements
 
-- Moodle 5.3; the current release is beta (see [version.php](version.php))
+- Moodle 5.3 (see [version.php](version.php))
 - BigBlueButton plugin (`mod_bigbluebuttonbn`)
 - BN Experience plugin (`bbbext_bnx` 1.3 or later; minimum version code `2026110500`) - must be enabled
 - A BigBlueButton server configured to send analytics callbacks, with meeting events enabled in the Moodle BigBlueButton settings (`meetingevents_enabled`)

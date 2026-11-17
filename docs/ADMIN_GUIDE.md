@@ -2,13 +2,12 @@
 
 ## Supported release line
 
-DataHub `1.2-beta.2` supports Moodle 5.3 and requires BNX 1.3 or later
-(minimum version code `2026110500`). Both plugins are beta releases; use
-matching Moodle 5.3-compatible builds.
+DataHub `1.2` supports Moodle 5.3 and requires BNX 1.3 or later
+(minimum version code `2026110500`). Use matching Moodle 5.3-compatible builds.
 
 ## Upgrading from an older Moodle release
 
-DataHub `1.2-beta.2` cannot be installed or upgraded on Moodle versions older
+DataHub `1.2` cannot be installed or upgraded on Moodle versions older
 than 5.3. Plan the Moodle upgrade first, following the Moodle upgrade guidance,
 and select compatible versions of BNX, DataHub, and other installed plugins for
 the target release. Do not attempt to install or upgrade this DataHub build on

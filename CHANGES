@@ -1,3 +1,9 @@
+1.2 (November 17, 2026)
+- feat: Add Dashboard + with session summaries, charts, and attendance and engagement reports.
+- fix: Protect analytics during deletion, backup, restore, callback processing, and report access.
+- fix: Display zero dashboard durations correctly and add the engagement report role filter.
+- chore: Promote the 1.2 release to stable for Moodle 5.3 and BNX 1.3 or later.
+
 1.2-beta.2 (November 16, 2026)
 - fix: Clean up analytics on activity deletion and prevent orphan records and cross-activity callback writes.
 - fix: Respect backup privacy settings and restrict built-in and custom reports by activity permissions and group visibility.

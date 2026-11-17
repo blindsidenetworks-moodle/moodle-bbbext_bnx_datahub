@@ -1,3 +1,9 @@
+1.2 (November 17, 2026)
+- Add Dashboard + with attendance and engagement summaries, charts, and selectable session details.
+- Improve analytics privacy, backup and restore, callback handling, and report access controls.
+- Fix zero-duration display and add a role filter to the engagement report.
+- Require Moodle 5.3 and BNX 1.3 or later. Scheduled custom DataHub reports remain blocked; administrators should disable existing schedules.
+
 1.2-beta.2 (November 16, 2026)
 - Improve analytics cleanup and backup privacy, and restrict reports to authorized activities and groups.
 - Reject callbacks for unrelated meetings and handle malformed attendees defensively.
