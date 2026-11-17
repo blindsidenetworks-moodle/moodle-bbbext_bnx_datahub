@@ -916,13 +916,34 @@ final class dashboard_service_test extends advanced_testcase {
     }
 
     /**
-     * A user without the write capability cannot change exclusion state.
+     * A report viewer without the write capability cannot change exclusion state.
      */
     public function test_exclusion_requires_capability(): void {
+        global $DB;
+
         $meeting = $this->insert_meeting(1000);
-        $this->setUser($this->getDataGenerator()->create_user());
-        $this->expectException(\core\exception\required_capability_exception::class);
-        exclusion_service::set_excluded($this->cmid, $meeting->id, true);
+        $viewer = $this->getDataGenerator()->create_user();
+        $context = \context_module::instance($this->cmid);
+        $roleid = create_role('Report viewer', 'datahubreportviewer', 'Report viewer');
+        assign_capability('bbbext/bnx_datahub:viewreports', CAP_ALLOW, $roleid, $context->id);
+        role_assign($roleid, $viewer->id, $context->id);
+        $this->setUser($viewer);
+        $this->assertTrue(has_capability('bbbext/bnx_datahub:viewreports', $context));
+        $this->assertFalse(has_capability('bbbext/bnx_datahub:manageexclusions', $context));
+
+        foreach ([true, false] as $excluded) {
+            $initialstate = (int) !$excluded;
+            $DB->set_field('bbbext_bnx_datahub_meeting', 'excluded', $initialstate, ['id' => $meeting->id]);
+            try {
+                exclusion_service::set_excluded($this->cmid, $meeting->id, $excluded);
+                $this->fail('A report viewer must not change exclusion state.');
+            } catch (\core\exception\required_capability_exception $exception) {
+                $this->assertSame(
+                    $initialstate,
+                    (int) $DB->get_field('bbbext_bnx_datahub_meeting', 'excluded', ['id' => $meeting->id])
+                );
+            }
+        }
     }
 
     /**

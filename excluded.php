@@ -43,7 +43,7 @@ $PAGE->set_url($listurl);
 $PAGE->set_title(get_string('dashboard:excludedtitle', 'bbbext_bnx_datahub'));
 $PAGE->set_heading(format_string($course->fullname, true, ['context' => $context]));
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (data_submitted()) {
     require_sesskey();
     $action = required_param('action', PARAM_ALPHA);
     $meetingid = required_param('meetingid', PARAM_INT);
