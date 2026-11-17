@@ -210,6 +210,10 @@ Analytics are included in backups only when the activity's user data is included
 
 See the [data and privacy guide](docs/DATA_AND_PRIVACY.md) for guest data, restore, retention, and security details.
 
+## Support
+
+Report bugs and request improvements in the [DataHub issue tracker](https://github.com/blindsidenetworks-moodle/moodle-bbbext_bnx_datahub/issues). Do not include personal data or credentials in reports.
+
 ## License
 
 GNU GPL v3 or later. See [COPYING](COPYING).
