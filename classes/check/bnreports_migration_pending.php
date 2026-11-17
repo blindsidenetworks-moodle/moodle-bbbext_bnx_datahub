@@ -22,9 +22,10 @@ use core\check\result;
 /**
  * Surface whether any legacy BN Reports rows still need to be migrated.
  *
- * @package    bbbext_bnx_datahub
- * @copyright  2026 onwards, Blindside Networks Inc
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   bbbext_bnx_datahub
+ * @copyright 2026 onwards, Blindside Networks Inc
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class bnreports_migration_pending extends check {
     /**

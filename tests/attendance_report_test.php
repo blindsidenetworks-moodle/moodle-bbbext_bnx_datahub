@@ -28,6 +28,7 @@ use core_reportbuilder\exception\report_access_exception;
  * @package   bbbext_bnx_datahub
  * @copyright 2025 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\bbbext_bnx_datahub\reportbuilder\local\systemreports\attendance::class)]
 final class attendance_report_test extends advanced_testcase {

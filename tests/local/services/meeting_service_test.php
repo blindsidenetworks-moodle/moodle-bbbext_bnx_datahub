@@ -25,6 +25,7 @@ use stdClass;
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\bbbext_bnx_datahub\local\services\meeting_service::class)]
 final class meeting_service_test extends advanced_testcase {

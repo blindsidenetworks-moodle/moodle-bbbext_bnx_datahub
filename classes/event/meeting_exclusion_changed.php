@@ -22,6 +22,7 @@ namespace bbbext_bnx_datahub\event;
  * @package   bbbext_bnx_datahub
  * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class meeting_exclusion_changed extends \core\event\base {
     /**

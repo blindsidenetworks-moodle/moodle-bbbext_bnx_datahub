@@ -28,9 +28,10 @@ use core\check\result;
  * must not write that flag itself (OL-3.2.1); this status check makes the
  * dependency visible to administrators via Site administration / Server / Status.
  *
- * @package    bbbext_bnx_datahub
- * @copyright  2026 onwards, Blindside Networks Inc
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   bbbext_bnx_datahub
+ * @copyright 2026 onwards, Blindside Networks Inc
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class meetingevents_enabled extends check {
     /**

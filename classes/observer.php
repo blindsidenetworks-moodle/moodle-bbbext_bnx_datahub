@@ -19,9 +19,10 @@ namespace bbbext_bnx_datahub;
 /**
  * Event observer callbacks for DataHub.
  *
- * @package    bbbext_bnx_datahub
- * @copyright  2026 onwards, Blindside Networks Inc
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   bbbext_bnx_datahub
+ * @copyright 2026 onwards, Blindside Networks Inc
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 class observer {
     /** @var array<int, int[]> BNX records captured before course module deletion. */

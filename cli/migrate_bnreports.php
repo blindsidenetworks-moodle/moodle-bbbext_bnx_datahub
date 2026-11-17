@@ -18,8 +18,9 @@
  * CLI script to migrate legacy BN Reports data into BNX DataHub.
  *
  * @package   bbbext_bnx_datahub
- * @copyright  2026 onwards, Blindside Networks Inc
+ * @copyright 2026 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 
 define('CLI_SCRIPT', true);

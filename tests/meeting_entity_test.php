@@ -28,6 +28,7 @@ use stdClass;
  * @package   bbbext_bnx_datahub
  * @copyright 2025 onwards, Blindside Networks Inc
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @author    Jesus Federico  (jesus [at] blindsidenetworks [dt] com)
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(\bbbext_bnx_datahub\reportbuilder\local\entities\meeting::class)]
 final class meeting_entity_test extends advanced_testcase {
