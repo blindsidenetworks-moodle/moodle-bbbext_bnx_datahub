@@ -115,6 +115,63 @@ final class engagement_report_test extends advanced_testcase {
         $this->assertContains('meeting:name', $filteridentifiers);
         $this->assertContains('meeting:timestart', $filteridentifiers);
         $this->assertContains('attendee:fullname', $filteridentifiers);
+        $this->assertContains('attendee:role', $filteridentifiers);
+    }
+
+    /**
+     * The role filter restricts results in site-wide and activity reports.
+     */
+    public function test_report_role_filter(): void {
+        global $DB, $PAGE;
+
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $activity = $generator->create_module('bigbluebuttonbn', ['course' => $course->id]);
+        $cm = get_coursemodule_from_instance('bigbluebuttonbn', $activity->id, $course->id, false, MUST_EXIST);
+        $bnx = $DB->get_record('bbbext_bnx', ['bigbluebuttonbnid' => $activity->id]);
+        if (!$bnx) {
+            $bnx = (object) [
+                'bigbluebuttonbnid' => $activity->id,
+                'timecreated' => time(),
+                'timemodified' => time(),
+            ];
+            $bnx->id = $DB->insert_record('bbbext_bnx', $bnx);
+        }
+        $meetingid = $DB->insert_record('bbbext_bnx_datahub_meeting', (object) [
+            'bnxid' => $bnx->id,
+            'externalmeetingid' => 'role-filter-external',
+            'internalmeetingid' => 'role-filter-internal',
+            'meetingname' => 'Role filter meeting',
+        ]);
+        foreach (['viewer' => 'Viewerperson', 'moderator' => 'Moderatorperson'] as $role => $firstname) {
+            $user = $generator->create_user(['firstname' => $firstname, 'lastname' => 'Test']);
+            $DB->insert_record('bbbext_bnx_datahub_meeting_user', (object) [
+                'meetingid' => $meetingid,
+                'userid' => $user->id,
+                'fullname' => fullname($user),
+                'attendeerole' => $role,
+            ]);
+        }
+
+        foreach ([context_system::instance(), context_module::instance($cm->id)] as $context) {
+            $PAGE = new \moodle_page();
+            $PAGE->set_url(new \moodle_url('/'));
+            $report = \core_reportbuilder\system_report_factory::create(engagement::class, $context);
+            $content = $report->output();
+            $this->assertStringContainsString('Viewerperson', $content);
+            $this->assertStringContainsString('Moderatorperson', $content);
+
+            foreach (['viewer' => 'Viewerperson', 'moderator' => 'Moderatorperson'] as $role => $firstname) {
+                $report->set_filter_values([
+                    'attendee:role_operator' => \core_reportbuilder\local\filters\select::EQUAL_TO,
+                    'attendee:role_value' => $role,
+                ]);
+                $content = $report->output();
+                $this->assertStringContainsString($firstname, $content);
+                $othername = $role === 'viewer' ? 'Moderatorperson' : 'Viewerperson';
+                $this->assertStringNotContainsString($othername, $content);
+            }
+        }
     }
 
     /**

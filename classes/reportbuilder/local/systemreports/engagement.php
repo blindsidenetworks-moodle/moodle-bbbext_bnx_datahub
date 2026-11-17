@@ -163,6 +163,7 @@ class engagement extends system_report {
             'meeting:name',
             'meeting:timestart',
             'attendee:fullname',
+            'attendee:role',
         ];
 
         $this->add_filters_from_entities($filters);
