@@ -8,49 +8,73 @@
 | [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | Developers | `bbbext` hook integration, event ingestion, persistence, reports, and extension practices |
 | [docs/DATA_AND_PRIVACY.md](docs/DATA_AND_PRIVACY.md) | Administrators and developers | Analytics data model, access control, retention, Privacy API, and migrations |
 
-A Moodle BigBlueButton extension plugin that captures meeting analytics and provides an activity dashboard plus attendance and engagement reports.
+A free Moodle BigBlueButton extension that stores meeting analytics and provides an activity dashboard plus attendance and engagement reports.
 
 ## Description
 
-This plugin extends the BigBlueButton activity module by capturing real-time meeting data via BigBlueButton's analytics callback. It stores attendance records, engagement metrics (chat messages, talk time, hand raises, emoji reactions, poll votes), and presents this data through comprehensive Moodle Reportbuilder reports.
+DataHub receives analytics callbacks after a BigBlueButton session ends. It stores attendance records and engagement metrics, including chat messages, talk time, hand raises, emoji reactions, and poll votes, and presents them in a dashboard and Moodle Report Builder reports. Repeated callbacks can update stored data. DataHub does not expose a separate external reporting API.
 
 **Note:** This plugin requires the parent `bbbext_bnx` (BN Experience) plugin to be installed and enabled.
 
 ## Features
 
-- **Attendance Tracking**: Records who joined, when they joined/left, and session duration
+- **Attendance Tracking**: Records who joined, when they joined/left, and attendance duration
 - **Engagement Metrics**: Tracks chat messages, talk count, talk time, hand raises, emoji reactions, and poll votes
-- **Reportbuilder Integration**: Uses Moodle's Reportbuilder for customizable, filterable, downloadable reports
+- **Report Builder Integration**: Uses Moodle Report Builder for customizable, filterable, downloadable reports
 - **Activity Dashboard**: Summarizes attendance and engagement across sessions, with charts and a selectable session overview
 - **Attendance Report**: Shows meeting participation with join/leave times and duration
 - **Engagement Report**: Displays interaction metrics for measuring student participation quality
-- **Capability-Based Access**: Only authorized users (teachers, managers, admins) can view reports
-- **GDPR Compliant**: Full Privacy API support for data export and deletion
+- **Session Exclusions**: Exclude and restore sessions in the dashboard and built-in reports without deleting their data
+- **Capability-Based Access**: Restricts report access and exclusion actions using Moodle capabilities and group visibility
+- **Privacy API**: Supports export and deletion of user-associated attendance and engagement data
 
 ## Requirements
 
-- Moodle 5.3 (the current `1.2-beta.2` beta release)
+- Moodle 5.3; the current release is beta (see [version.php](version.php))
 - BigBlueButton plugin (`mod_bigbluebuttonbn`)
 - BN Experience plugin (`bbbext_bnx` 1.3 or later; minimum version code `2026110500`) - must be enabled
-- BigBlueButton server with analytics callback enabled (`meetingevents_enabled`)
+- A BigBlueButton server configured to send analytics callbacks, with meeting events enabled in the Moodle BigBlueButton settings (`meetingevents_enabled`)
 
 ## Installation
 
-1. Copy the plugin to `mod/bigbluebuttonbn/extension/bnx_datahub/`
-2. Visit Site Administration > Notifications to complete installation
-3. Ensure a compatible `bbbext_bnx` 1.3 release is enabled
-4. Enable meeting events: Site Administration > Plugins > Activity modules > BigBlueButton > General settings > `meetingevents_enabled`
+1. Install and enable a compatible `bbbext_bnx` 1.3 or later release.
+2. Enable meeting events: Site administration > Plugins > Activity modules > BigBlueButton > General settings > `meetingevents_enabled`.
+3. Copy DataHub to `public/mod/bigbluebuttonbn/extension/bnx_datahub/` under the Moodle root.
+4. Visit Site administration > Notifications to complete installation and confirm DataHub is enabled.
 5. Open **Dashboard +** from the BigBlueButton activity navigation to view the activity summary and session overview.
 
-## Sidecar contract
+## Prerequisites and status checks
 
-As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict sidecar contract: it MUST NOT write to settings owned by other components. In particular it never enables `bigbluebuttonbn_meetingevents_enabled` from its install, upgrade, observer or `on_enable` code paths. Operators are responsible for enabling that flag on the parent plugin during installation. DataHub also requires the parent `bbbext_bnx` sidecar to remain enabled; if BNX is disabled, DataHub self-disables in its own namespace and surfaces the prerequisite via both its own settings page and a status check at *Site administration > Server > Status* (`bbbext_bnx_datahub_bnx_enabled`). The meeting-events prerequisite remains visible on the same DataHub settings page and there as `bbbext_bnx_datahub_meetingevents_enabled`, while the legacy BN Reports conflict is surfaced as `bbbext_bnx_datahub_bnreports_conflict`. Conformance tests in `tests/meetingevents_enablement_test.php` pin the no-cross-plugin-write contract plus the sidecar-owned prerequisite checks.
+DataHub does not change settings owned by BigBlueButton or BNX. An administrator must enable meeting events in BigBlueButton. If BNX is disabled, DataHub disables itself and must be re-enabled after the prerequisite is restored.
+
+At **Site administration > Server > Status**, DataHub reports on BNX and meeting-events availability, conflicts with the legacy BN Reports plugin, pending BN Reports migration, and historical meeting-duration discrepancies. See the [administrator guide](docs/ADMIN_GUIDE.md) for troubleshooting and recovery.
 
 ## Capabilities
 
 | Capability | Description | Default Roles |
 |------------|-------------|---------------|
 | `bbbext/bnx_datahub:viewreports` | View attendance and engagement reports | Manager, Editing Teacher, Admin |
+| `bbbext/bnx_datahub:manageexclusions` | Exclude and restore sessions in an activity | Manager, Editing Teacher |
+
+When first registered, these capabilities clone permissions from `moodle/course:manageactivities`, including custom roles and context overrides. Review the resulting grants. Group visibility also limits which sessions a viewer can access; see the [administrator guide](docs/ADMIN_GUIDE.md).
+
+## Exclusions and custom reports
+
+Users with the exclusion capability can exclude a session from the dashboard and built-in attendance and engagement reports, including downloads, and restore it later. Exclusion does not delete data. Custom Report Builder reports can still include excluded sessions; use the **Excluded from default reports** column or filter to control their visibility.
+
+Disable all schedules for custom reports using DataHub datasources. Standard scheduled and ad-hoc sends are rejected because recipient access cannot be reliably enforced; a rejected recurring schedule can interrupt the scheduler run and delay other reports. Interactive reports and downloads remain subject to the viewer's permissions and group visibility.
+
+## Maintenance tools
+
+Run the following commands from the Moodle root. Back up the site before migration or applying changes, and review the [administrator guide](docs/ADMIN_GUIDE.md) for prerequisites and detailed procedures.
+
+| Tool | Purpose |
+| --- | --- |
+| `php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/migrate_bnreports.php` | Migrate legacy BN Reports data. |
+| `php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/repair_durations.php` | Preview supported historical duration corrections; add `--apply` after review. |
+| `php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/cleanup_orphan_attendees.php` | Preview orphan attendees; add `--orphan-meetings` to select orphan meetings and their attendees, and `--apply` after review to delete them. |
+
+Cleanup is irreversible. Stop concurrent activity or course deletions before reviewing orphan meetings.
 
 ## Architecture
 
@@ -71,7 +95,7 @@ As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict s
 | `dashboard_service` and `dashboard` | Build and render activity-level dashboard summaries and session details |
 | `privacy\provider` | GDPR Privacy API implementation |
 
-### Reportbuilder Entities
+### Report Builder Entities
 
 | Entity | Purpose |
 |--------|---------|
@@ -96,7 +120,7 @@ As a subplugin of `mod_bigbluebuttonbn`, `bbbext_bnx_datahub` follows a strict s
 - Raw metadata from BigBlueButton
 
 ### Attendee Data
-- User ID and display name
+- User ID when known and display name (guests may not have a Moodle user ID)
 - Attendee role (`attendeerole`, moderator/viewer)
 - Join and leave timestamps
 - Elapsed time in meeting
@@ -171,7 +195,7 @@ Custom steps are defined in `tests/behat/behat_bbbext_bnx_datahub.php`.
 3. **Event Processing**: `broker_meeting_events_addons` receives the webhook and extracts meeting data
 4. **Data Storage**: `logger` class stores meeting and attendee records in the database
 5. **Report Access**: Teachers access reports via links in the activity navigation
-6. **Report Display**: Reportbuilder renders the data with columns, filters, and export options
+6. **Report Display**: Report Builder renders the data with columns, filters, and export options
 
 ## Privacy
 
@@ -180,16 +204,15 @@ This plugin stores personal user data for meeting analytics. Data stored include
 - Meeting attendance timestamps
 - Engagement metrics (chat count, talk time, etc.)
 
-The plugin implements Moodle's Privacy API:
-- Users can export their attendance and engagement data
-- User data is deleted upon GDPR deletion requests
-- Data is associated with the activity context
+The Moodle Privacy API supports export and deletion of user-associated attendance and engagement records in the activity context. Excluded sessions remain subject to privacy exports and deletion requests. DataHub does not impose a separate retention schedule.
 
-See `classes/privacy/provider.php` for the complete privacy implementation.
+Analytics are included in backups only when the activity's user data is included and the backup is not anonymized. On restore, attendees who cannot be mapped to Moodle users are omitted; potentially identifying raw payloads for affected meetings are also discarded. Deleting an activity or course removes its analytics after any recycle-bin backup, subject to deferred deletion and backup retention.
+
+See the [data and privacy guide](docs/DATA_AND_PRIVACY.md) for guest data, restore, retention, and security details.
 
 ## License
 
-GNU GPL v3 or later - http://www.gnu.org/copyleft/gpl.html
+GNU GPL v3 or later. See [COPYING](COPYING).
 
 ## Author
 
