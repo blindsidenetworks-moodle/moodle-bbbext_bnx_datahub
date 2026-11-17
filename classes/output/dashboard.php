@@ -103,7 +103,7 @@ class dashboard implements renderable, templatable {
             ],
             (object) [
                 'label' => get_string('dashboard:medianattendance', 'bbbext_bnx_datahub'),
-                'value' => format_time($this->data->medianattendance),
+                'value' => self::format_duration($this->data->medianattendance),
             ],
             (object) [
                 'label' => get_string('dashboard:pollparticipants', 'bbbext_bnx_datahub'),
@@ -150,7 +150,7 @@ class dashboard implements renderable, templatable {
         $data->selectedsession = (object) [
             'name' => format_string($this->data->selectedmeeting->meetingname),
             'date' => userdate((int) $this->data->selectedmeeting->timestart),
-            'duration' => format_time((int) $this->data->selectedmeeting->duration),
+            'duration' => self::format_duration((int) $this->data->selectedmeeting->duration),
         ];
         $data->sessionmetrics = $this->session_metrics();
         $data->attendeecolumns = [
@@ -166,8 +166,8 @@ class dashboard implements renderable, templatable {
         $data->attendees = array_map(static function (\stdClass $learner): \stdClass {
             return (object) [
                 'fullname' => $learner->fullname,
-                'attendance' => format_time($learner->elapsedtime),
-                'talktime' => format_time($learner->talktime),
+                'attendance' => self::format_duration($learner->elapsedtime),
+                'talktime' => self::format_duration($learner->talktime),
                 'messages' => $learner->chats,
                 'reactions' => $learner->emojis,
                 'raisedhands' => $learner->raisedhands,
@@ -180,6 +180,16 @@ class dashboard implements renderable, templatable {
         $data->learnerchart = $data->hasattendees ? $OUTPUT->render($this->learner_chart()) : '';
 
         return $data;
+    }
+
+    /**
+     * Format a duration, including zero seconds.
+     *
+     * @param int $seconds Duration in seconds.
+     * @return string Localised duration.
+     */
+    private static function format_duration(int $seconds): string {
+        return $seconds === 0 ? get_string('numseconds', 'moodle', 0) : format_time($seconds);
     }
 
     /**
@@ -203,7 +213,7 @@ class dashboard implements renderable, templatable {
             ],
             (object) [
                 'label' => get_string('dashboard:medianattendance', 'bbbext_bnx_datahub'),
-                'value' => format_time($metrics->medianattendance),
+                'value' => self::format_duration($metrics->medianattendance),
             ],
             (object) [
                 'label' => get_string('attendee:engchats', 'bbbext_bnx_datahub'),

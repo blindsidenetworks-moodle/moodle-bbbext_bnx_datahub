@@ -134,6 +134,24 @@ final class dashboard_test extends advanced_testcase {
         $this->assertStringContainsString('name="action" value="exclude"', $managedhtml);
         $this->assertNotEmpty((new dashboard($input, 42))->export_session_for_template()->learnerchart);
 
+        $this->assertSame(format_time(1800), $data->metrics[2]->value);
+        $this->assertSame(format_time(1800), $data->session->sessionmetrics[2]->value);
+        $this->assertSame(format_time(1800), $data->session->attendees[0]->attendance);
+        $this->assertSame(format_time(120), $data->session->attendees[0]->talktime);
+
+        $input->medianattendance = 0;
+        $input->selectedmeeting->duration = 0;
+        $input->selectedmetrics->medianattendance = 0;
+        $input->selectedlearners[0]->elapsedtime = 0;
+        $input->selectedlearners[0]->talktime = 0;
+        $zerodata = (new dashboard($input, 42))->export_for_template($OUTPUT);
+        $zeroduration = get_string('numseconds', 'moodle', 0);
+        $this->assertSame($zeroduration, $zerodata->metrics[2]->value);
+        $this->assertSame($zeroduration, $zerodata->session->selectedsession->duration);
+        $this->assertSame($zeroduration, $zerodata->session->sessionmetrics[2]->value);
+        $this->assertSame($zeroduration, $zerodata->session->attendees[0]->attendance);
+        $this->assertSame($zeroduration, $zerodata->session->attendees[0]->talktime);
+
         $input->selectedlearners = [];
         $emptydata = (new dashboard($input, 42))->export_for_template($OUTPUT);
         $this->assertSame('', $emptydata->learnerchart);
