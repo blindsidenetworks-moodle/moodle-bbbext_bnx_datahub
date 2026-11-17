@@ -40,26 +40,15 @@ require_once(__DIR__ . '/../db/migration.php');
 
 if (!empty($unrecognized)) {
     $unrecognized = implode(' ', $unrecognized);
-    cli_error("Unrecognised option(s): {$unrecognized}");
+    cli_error(get_string('cli:unknown_option', 'bbbext_bnx_datahub', $unrecognized));
 }
 
 if (!empty($options['help'])) {
-    $help = <<<TXT
-Migrate legacy BN Reports data into BNX DataHub.
-
-This command runs the same idempotent migration helper used by the upgrade path.
-If BN Reports is still installed and enabled, DataHub will self-disable after the
-migration to avoid double-processing the meeting-events stream.
-Run this from the Moodle root as: php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/migrate_bnreports.php
-
-Options:
-  -h, --help  Print this help
-TXT;
-    cli_writeln($help);
+    cli_writeln(get_string('cli:migrate_help', 'bbbext_bnx_datahub'));
     exit(0);
 }
 
-cli_heading('BNX DataHub BN Reports migration');
-cli_writeln('Running legacy BN Reports migration helper...');
+cli_heading(get_string('cli:migrate_heading', 'bbbext_bnx_datahub'));
+cli_writeln(get_string('cli:migrate_start', 'bbbext_bnx_datahub'));
 bbbext_bnx_datahub_migrate_bnreports_data();
-cli_writeln('Migration helper finished.');
+cli_writeln(get_string('cli:migrate_done', 'bbbext_bnx_datahub'));

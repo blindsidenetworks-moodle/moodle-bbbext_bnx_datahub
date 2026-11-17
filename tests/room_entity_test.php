@@ -67,6 +67,7 @@ final class room_entity_test extends advanced_testcase {
         $this->assertInstanceOf(\lang_string::class, $title);
         $this->assertEquals('room', $title->get_identifier());
         $this->assertEquals('bbbext_bnx_datahub', $title->get_component());
+        $this->assertEquals('BigBlueButton room', (string) $title);
     }
 
     /**

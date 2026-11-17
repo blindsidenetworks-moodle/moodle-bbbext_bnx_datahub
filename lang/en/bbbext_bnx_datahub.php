@@ -26,7 +26,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['attendance'] = 'Attendance';
-$string['attendee'] = 'BigBlueButton Attendee';
+$string['attendee'] = 'BigBlueButton attendee';
 $string['attendee:elapsedtime'] = 'Elapsed time';
 $string['attendee:engchats'] = 'Chats';
 $string['attendee:engemojis'] = 'Emojis';
@@ -75,6 +75,58 @@ $string['check_meetingevents_enabled_ok'] = 'Meeting events are enabled.';
 $string['check_meetingevents_enabled_ok_details'] = 'mod_bigbluebuttonbn is configured to emit meeting analytics callbacks, which bbbext_bnx_datahub consumes to populate attendance and engagement reports.';
 $string['check_meetingevents_enabled_warning'] = 'Meeting events are not enabled on mod_bigbluebuttonbn.';
 $string['check_meetingevents_enabled_warning_details'] = 'bbbext_bnx_datahub depends on mod_bigbluebuttonbn emitting analytics callbacks. Enable "Meeting events" in the BigBlueButton activity plugin settings; without it, attendance and engagement reports will not be populated. The bnx_datahub sidecar does not modify this parent setting on its own.';
+$string['cli:cleanup_attendee_count'] = 'Orphan attendee records found: {$a}';
+$string['cli:cleanup_attendees_heading'] = 'BNX DataHub orphan attendee cleanup';
+$string['cli:cleanup_done'] = 'Cleanup completed.';
+$string['cli:cleanup_help'] = 'Preview or delete orphan DataHub records. By default, select attendees whose meeting no longer exists.
+
+The default is a read-only preview. Deletion is irreversible; back up the site first.
+Run this from the Moodle root as: php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/cleanup_orphan_attendees.php
+
+Options:
+    --orphan-meetings  Select meetings whose BNX record no longer exists, and their attendees
+    --apply            Delete the selected orphan records
+    -h, --help         Print this help';
+$string['cli:cleanup_meeting_attendees'] = 'Attendee records in those meetings: {$a}';
+$string['cli:cleanup_meeting_count'] = 'Orphan meetings found: {$a}';
+$string['cli:cleanup_meetings_heading'] = 'BNX DataHub orphan meeting cleanup';
+$string['cli:cleanup_option_values'] = 'The --apply and --orphan-meetings options do not accept values.';
+$string['cli:cleanup_preview'] = 'Preview only; no records were deleted. Use --apply to delete these records.';
+$string['cli:migrate_done'] = 'Migration helper finished.';
+$string['cli:migrate_heading'] = 'BNX DataHub BN Reports migration';
+$string['cli:migrate_help'] = 'Migrate legacy BN Reports data into BNX DataHub.
+
+This command runs the same idempotent migration helper used by the upgrade path.
+If BN Reports is still installed and enabled, DataHub will self-disable after the
+migration to avoid double-processing the meeting-events stream.
+Run this from the Moodle root as: php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/migrate_bnreports.php
+
+Options:
+  -h, --help  Print this help';
+$string['cli:migrate_start'] = 'Running legacy BN Reports migration helper...';
+$string['cli:repair_ambiguous'] = 'Meeting {$a}: no usable matching callback duration (ambiguous)';
+$string['cli:repair_ambiguous_count'] = 'Records without usable callback evidence: {$a}';
+$string['cli:repair_apply_value'] = 'The --apply option does not accept a value.';
+$string['cli:repair_changed_count'] = 'Records changed during the scan and skipped: {$a}';
+$string['cli:repair_discrepancies'] = 'Supported discrepancies: {$a}';
+$string['cli:repair_heading'] = 'BNX DataHub historical meeting durations';
+$string['cli:repair_help'] = 'Preview or repair historical meeting durations using retained matching callbacks.
+
+The default is read-only. Review the preview and back up the site before applying.
+Each run scans current data again; records may differ from an earlier preview.
+Run from the Moodle root: php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/repair_durations.php
+
+Options:
+    --apply     Apply supported corrections
+    -h, --help  Print this help';
+$string['cli:repair_preview'] = 'Preview only; no records were changed. Use --apply after reviewing the results.';
+$string['cli:repair_result'] = 'Meeting {$a->id}: {$a->duration} -> {$a->expected} seconds ({$a->status})';
+$string['cli:repair_scanned'] = 'Meetings scanned: {$a}';
+$string['cli:repair_status_changed'] = 'changed';
+$string['cli:repair_status_preview'] = 'preview';
+$string['cli:repair_status_updated'] = 'updated';
+$string['cli:repair_updated_count'] = 'Records updated: {$a}';
+$string['cli:unknown_option'] = 'Unrecognised option(s): {$a}';
 $string['config_enable_debug_logging'] = 'Enable debug logging';
 $string['config_enable_debug_logging_desc'] = 'If enabled, the plugin writes developer debug messages for datahub processing events.';
 $string['dashboard'] = 'DataHub dashboard +';
@@ -114,7 +166,7 @@ $string['dashboardintro'] = 'A visual summary of attendance and participation ac
 $string['engagement'] = 'Engagement';
 $string['eventexclusionchanged'] = 'Session exclusion changed';
 $string['internalmeetingid'] = 'Internal meeting ID';
-$string['meeting'] = 'BigBlueButton Meeting';
+$string['meeting'] = 'BigBlueButton meeting';
 $string['meeting:id'] = 'Meeting ID';
 $string['meeting:internalmeetingid'] = 'Internal meeting ID';
 $string['meeting:name'] = 'Meeting name';
@@ -153,7 +205,7 @@ $string['privacy:metadata:timeleave'] = 'The time when the user left the meeting
 $string['privacy:metadata:userid'] = 'The Moodle user ID of the meeting participant.';
 $string['reportattendance'] = 'Attendance report +';
 $string['reportengagement'] = 'Engagement report +';
-$string['room'] = 'BigBlueButton Room';
+$string['room'] = 'BigBlueButton room';
 $string['room:id'] = 'Room ID';
 $string['room:name'] = 'Room name';
 $string['room:timecreated'] = 'Time created';

@@ -69,6 +69,7 @@ final class meeting_entity_test extends advanced_testcase {
         $this->assertInstanceOf(\lang_string::class, $title);
         $this->assertEquals('meeting', $title->get_identifier());
         $this->assertEquals('bbbext_bnx_datahub', $title->get_component());
+        $this->assertEquals('BigBlueButton meeting', (string) $title);
     }
 
     /**

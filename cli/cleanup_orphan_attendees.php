@@ -43,42 +43,31 @@ require_once($CFG->libdir . '/clilib.php');
 
 if (!empty($unrecognized)) {
     $unrecognized = implode(' ', $unrecognized);
-    cli_error("Unrecognised option(s): {$unrecognized}");
+    cli_error(get_string('cli:unknown_option', 'bbbext_bnx_datahub', $unrecognized));
 }
 
 if (!is_bool($options['apply']) || !is_bool($options['orphan-meetings'])) {
-    cli_error('The --apply and --orphan-meetings options do not accept values.');
+    cli_error(get_string('cli:cleanup_option_values', 'bbbext_bnx_datahub'));
 }
 
 if (!empty($options['help'])) {
-    $help = <<<TXT
-Preview or delete orphan DataHub records. By default, select attendees whose meeting no longer exists.
-
-The default is a read-only preview. Deletion is irreversible; back up the site first.
-Run this from the Moodle root as: php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/cleanup_orphan_attendees.php
-
-Options:
-    --orphan-meetings  Select meetings whose BNX record no longer exists, and their attendees
-    --apply            Delete the selected orphan records
-    -h, --help         Print this help
-TXT;
-    cli_writeln($help);
+    cli_writeln(get_string('cli:cleanup_help', 'bbbext_bnx_datahub'));
     exit(0);
 }
 
 $apply = $options['apply'];
 if ($options['orphan-meetings']) {
-    cli_heading('BNX DataHub orphan meeting cleanup');
+    cli_heading(get_string('cli:cleanup_meetings_heading', 'bbbext_bnx_datahub'));
     $counts = orphan_cleanup_service::clean_orphan_meetings($apply);
-    cli_writeln("Orphan meetings found: {$counts['meetings']}");
-    cli_writeln("Attendee records in those meetings: {$counts['attendees']}");
+    cli_writeln(get_string('cli:cleanup_meeting_count', 'bbbext_bnx_datahub', $counts['meetings']));
+    cli_writeln(get_string('cli:cleanup_meeting_attendees', 'bbbext_bnx_datahub', $counts['attendees']));
 } else {
-    cli_heading('BNX DataHub orphan attendee cleanup');
+    cli_heading(get_string('cli:cleanup_attendees_heading', 'bbbext_bnx_datahub'));
     $count = orphan_cleanup_service::clean($apply);
-    cli_writeln("Orphan attendee records found: {$count}");
+    cli_writeln(get_string('cli:cleanup_attendee_count', 'bbbext_bnx_datahub', $count));
 }
 if ($apply) {
-    cli_writeln('Cleanup completed.');
+    cli_writeln(get_string('cli:cleanup_done', 'bbbext_bnx_datahub'));
 } else {
-    cli_writeln('Preview only; no records were deleted. Use --apply to delete these records.');
+    cli_writeln(get_string('cli:cleanup_preview', 'bbbext_bnx_datahub'));
 }

@@ -36,43 +36,39 @@ require_once($CFG->libdir . '/clilib.php');
 );
 
 if (!empty($unrecognized)) {
-    cli_error('Unrecognised option(s): ' . implode(' ', $unrecognized));
+    cli_error(get_string('cli:unknown_option', 'bbbext_bnx_datahub', implode(' ', $unrecognized)));
 }
 if (!is_bool($options['apply'])) {
-    cli_error('The --apply option does not accept a value.');
+    cli_error(get_string('cli:repair_apply_value', 'bbbext_bnx_datahub'));
 }
 if ($options['help']) {
-    cli_writeln(<<<TXT
-Preview or repair historical meeting durations using retained matching callbacks.
-
-The default is read-only. Review the preview and back up the site before applying.
-Each run scans current data again; records may differ from an earlier preview.
-Run from the Moodle root: php public/mod/bigbluebuttonbn/extension/bnx_datahub/cli/repair_durations.php
-
-Options:
-    --apply     Apply supported corrections
-    -h, --help  Print this help
-TXT);
+    cli_writeln(get_string('cli:repair_help', 'bbbext_bnx_datahub'));
     exit(0);
 }
 
-cli_heading('BNX DataHub historical meeting durations');
+cli_heading(get_string('cli:repair_heading', 'bbbext_bnx_datahub'));
 $counts = duration_repair_service::scan(
     static function (stdClass $meeting, ?int $expected, string $status): void {
         if ($status === 'ambiguous') {
-            cli_writeln("Meeting {$meeting->id}: no usable matching callback duration (ambiguous)");
+            cli_writeln(get_string('cli:repair_ambiguous', 'bbbext_bnx_datahub', $meeting->id));
         } else {
-            cli_writeln("Meeting {$meeting->id}: {$meeting->duration} -> {$expected} seconds ({$status})");
+            $details = (object) [
+                'id' => $meeting->id,
+                'duration' => $meeting->duration,
+                'expected' => $expected,
+                'status' => get_string('cli:repair_status_' . $status, 'bbbext_bnx_datahub'),
+            ];
+            cli_writeln(get_string('cli:repair_result', 'bbbext_bnx_datahub', $details));
         }
     },
     $options['apply']
 );
-cli_writeln("Meetings scanned: {$counts['scanned']}");
-cli_writeln("Records without usable callback evidence: {$counts['ambiguous']}");
-cli_writeln("Supported discrepancies: {$counts['discrepancies']}");
+cli_writeln(get_string('cli:repair_scanned', 'bbbext_bnx_datahub', $counts['scanned']));
+cli_writeln(get_string('cli:repair_ambiguous_count', 'bbbext_bnx_datahub', $counts['ambiguous']));
+cli_writeln(get_string('cli:repair_discrepancies', 'bbbext_bnx_datahub', $counts['discrepancies']));
 if ($options['apply']) {
-    cli_writeln("Records updated: {$counts['updated']}");
-    cli_writeln("Records changed during the scan and skipped: {$counts['changed']}");
+    cli_writeln(get_string('cli:repair_updated_count', 'bbbext_bnx_datahub', $counts['updated']));
+    cli_writeln(get_string('cli:repair_changed_count', 'bbbext_bnx_datahub', $counts['changed']));
 } else {
-    cli_writeln('Preview only; no records were changed. Use --apply after reviewing the results.');
+    cli_writeln(get_string('cli:repair_preview', 'bbbext_bnx_datahub'));
 }

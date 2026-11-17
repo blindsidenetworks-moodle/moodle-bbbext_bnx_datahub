@@ -67,6 +67,7 @@ final class attendee_entity_test extends advanced_testcase {
         $this->assertInstanceOf(\lang_string::class, $title);
         $this->assertEquals('attendee', $title->get_identifier());
         $this->assertEquals('bbbext_bnx_datahub', $title->get_component());
+        $this->assertEquals('BigBlueButton attendee', (string) $title);
     }
 
     /**
